@@ -55,7 +55,7 @@ pub fn read_bool(msg: &str) -> bool {
 }
 
 pub fn read_option_bool(msg: &str) -> Option<bool> {
-	let msg = format!("{} [y/n/empty]");
+	let msg = format!("{} [y/n/empty]", msg);
 	loop {
 		let s = read_input(&msg);
 		match &s.to_lowercase()[..] {
@@ -73,4 +73,8 @@ pub fn read_option_bool(msg: &str) -> Option<bool> {
 			}
 		}
 	}
+}
+
+pub fn split_command<'a> (s: &'a str) -> (&'a str, Option<&'a str>) {
+	todo!()
 }

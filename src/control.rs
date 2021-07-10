@@ -1,8 +1,16 @@
 use crate::{
+	prompt, split_command,
 	command::Cmd, handler::Handler, read_bool, read_input, read_option, read_option_bool,
 	SpotifyResult,
 };
-use rspotify::blocking::client::Spotify;
+use rspotify::{
+	blocking::client::Spotify,
+model::{
+	playlist::{SimplifiedPlaylist, FullPlaylist},
+	playing::Playing,
+	},
+};
+use regex::Regex;
 
 pub struct Controller {
 	client: Spotify,
@@ -15,16 +23,17 @@ pub struct Controller {
 
 impl Controller {
 	pub fn start(&mut self) {
+		let re_vol= Regex::new(r"^\s*(\-|\+)\s*(\d+)\s*$").unwrap();
 		loop {
 			let input = prompt(&self.prompt);
 			// check for some builtins
 			if input.is_empty() {
 				self.toggle();
 			} else if input.starts_with("prompt") {
-				self.set_prompt(input.strip_prefix("prompt"));
-			} else if let Some(cap) = RE_VOL.captures(&input) {
-				let op = cap.get(1).unwrap();
-				let n = cap.get(2).unwrap().parse::<i32>().unwrap();
+				self.set_prompt(input.strip_prefix("prompt").unwrap_or(""));
+			} else if let Some(cap) = re_vol.captures(&input) {
+				let op = cap.get(1).unwrap().as_str();
+				let n = cap.get(2).unwrap().as_str().parse::<i32>().unwrap();
 				self.change_volume(if op == "+" { n } else { -n });
 			} else {
 				// check handlers
@@ -34,7 +43,7 @@ impl Controller {
 						println!("{} is not a known command", cmd);
 					}
 					Some(h) => {
-						self.exec_cmd(h.cmd, args);
+						self.exec_cmd(&h.cmd, args);
 					}
 				};
 			}
@@ -43,7 +52,7 @@ impl Controller {
 }
 
 impl Controller {
-	fn exec_cmd(&mut self, c: &Cmd, args: &str) {
+	fn exec_cmd(&mut self, c: &Cmd, args: Option<&str>) -> SpotifyResult{
 		use Cmd::*;
 		match c {
 			// search commands
@@ -83,7 +92,7 @@ impl Controller {
 
 // library commands
 impl Controller {
-	fn create_playlist(&self, arg: &Option<&str>) -> SpotifyResult {
+	fn create_playlist(&self, arg: Option<&str>) -> SpotifyResult {
 		let name = match arg.as_ref() {
 			None => {
 				let s = read_input("playlist name");
@@ -100,11 +109,11 @@ impl Controller {
 		};
 
 		let description = read_input("playlist description");
-		let public = read_bool("should the playlist be public?");
-		let confirm = read_bool("create playlist {}?", &name);
+		let public = read_option_bool("should the playlist be public?");
+		let confirm = read_bool(&format!("create playlist {}?", &name));
 		if confirm {
 			self.client
-				.user_playlist_create(&self.user, &name, public, &description)
+				.user_playlist_create(&self.user, &name, public, description)
 				.map(|_| {
 					println!("created new playlist {}", &name);
 				})
@@ -114,7 +123,7 @@ impl Controller {
 		}
 	}
 
-	fn edit_playlist(&self, arg: &Option<&str>) -> SpotifyResult {
+	fn edit_playlist(&self, arg: Option<&str>) -> SpotifyResult {
 		let pl = match self.choose_playlist(arg)? {
 			None => {
 				return Ok(());
@@ -124,11 +133,11 @@ impl Controller {
 
 		let name = read_option(&format!("playlist name ({})", &pl.name));
 		let description = read_option("playlist description (skip to not change)");
-		let public = read_option_bool(&format!("public ({})", pl.public));
+		let public = read_option_bool("public");
 
 		if read_bool(&format!("change details for {}?", &pl.name)) {
 			self.client
-				.user_playlist_change_detail(&self.user, &pl.id, name.into(), public, description)
+				.user_playlist_change_detail(&self.user, &pl.id, name.map(|s| s.as_str()), public, description, None)
 				.map(|_| {
 					println!("edited {}", &pl.name);
 				})
@@ -147,12 +156,12 @@ impl Controller {
 			Some(p) => p,
 		};
 
-		if self.read_bool(&format!("delete {}?", &pl.name)) {
+		if read_bool(&format!("delete {}?", &pl.name)) {
 			self.client
 				.user_playlist_unfollow(&self.user, &pl.id)
 				.map(|_| {
 					if let Some(s) = self.last_pl.as_ref() {
-						if s.id == &pl.id {
+						if s.id.eq(&pl.id) {
 							self.last_pl = None;
 						}
 					}
@@ -219,7 +228,7 @@ impl Controller {
 		todo!()
 	}
 
-	fn search_tracks(&self, arg: Option<&str>) -> SpotifyResult {
+	fn search_track(&self, arg: Option<&str>) -> SpotifyResult {
 		todo!()
 	}
 
@@ -309,6 +318,16 @@ impl Controller {
 	}
 
 	fn play_user_playlist(&mut self, arg: Option<&str>) -> SpotifyResult {
+		todo!()
+	}
+}
+
+impl Controller{
+	fn choose_playlist(&self, arg: Option<&str>) -> Result<Option<FullPlaylist>, failure::Error> {
+		todo!()
+	}
+	
+	fn playing_track(&self) -> Result<Option<Playing>, failure::Error> {
 		todo!()
 	}
 }

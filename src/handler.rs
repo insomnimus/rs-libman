@@ -1,3 +1,6 @@
+use std::borrow::Cow;
+use crate::command::Cmd;
+
 pub struct Handler {
 	pub name: Cow<'static, str>,
 	pub cmd: Cmd,
