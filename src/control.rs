@@ -6,7 +6,7 @@ use regex::Regex;
 use rspotify::{
     blocking::client::Spotify,
     model::{device::Device, playlist::SimplifiedPlaylist, track::FullTrack, PlayingItem},
-    senum::AdditionalType,
+    senum::{AdditionalType, RepeatState},
 };
 use std::{convert::TryFrom, mem};
 
@@ -371,8 +371,26 @@ impl Controller {
         }
     }
 
-    fn repeat(&self, _arg: Option<&str>) -> SpotifyResult {
-        todo!()
+    fn repeat(&self, arg: Option<&str>) -> SpotifyResult {
+        let rep = match arg {
+            Some(s) => match &s.to_lowercase()[..] {
+                "off" | "false" | "no" => RepeatState::Off,
+                "context" | "playlist" | "album" | "pl" => RepeatState::Context,
+                "track" | "on" | "true" | "yes" => RepeatState::Track,
+                _ => {
+                    self.show_usage(Cmd::Repeat);
+                    return Ok(());
+                }
+            },
+            None => {
+                self.show_usage(Cmd::Repeat);
+                return Ok(());
+            }
+        };
+
+        self.client.repeat(rep, None).map(|_| {
+            println!("repeat = {}", rep.as_str());
+        })
     }
 
     fn toggle(&mut self) -> SpotifyResult {
