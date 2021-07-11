@@ -5,12 +5,7 @@ use crate::{
 use regex::Regex;
 use rspotify::{
 	blocking::client::Spotify,
-	model::{
-		device::Device,
-		playlist::SimplifiedPlaylist,
-		track::FullTrack,
-		PlayingItem,
-	},
+	model::{device::Device, playlist::SimplifiedPlaylist, track::FullTrack, PlayingItem},
 };
 use std::{convert::TryFrom, mem};
 
@@ -390,22 +385,35 @@ impl Controller {
 		todo!()
 	}
 
-	fn play_user_playlist(&mut self, _arg: Option<&str>) -> SpotifyResult {
-		todo!()
+	fn play_user_playlist(&mut self, arg: Option<&str>) -> SpotifyResult {
+		if let Some(pl) = self.choose_playlist(arg)? {
+			self.client
+				.start_playback(None, Some(pl.uri.clone()), None, None, None)
+				.map(|_| {
+					println!("playing {}", &pl.name);
+					self.playing = true;
+					self.last_pl = Some(pl);
+				})
+		} else {
+			println!("cancelled");
+			Ok(())
+		}
 	}
 }
 
 // utilities
 impl Controller {
-	fn choose_playlist(&self, _arg: Option<&str>) -> Result<Option<SimplifiedPlaylist>, failure::Error> {
+	fn choose_playlist(
+		&self,
+		_arg: Option<&str>,
+	) -> Result<Option<SimplifiedPlaylist>, failure::Error> {
 		let mut pls = self.get_playlists()?;
 		if pls.is_empty() {
 			println!("you don't seem to have any playlist");
 			return Ok(None);
 		}
-		
-		Ok(read_number(0, pls.len())
-		.map(|n| pls.remove(n)))
+
+		Ok(read_number(0, pls.len()).map(|n| pls.remove(n)))
 	}
 
 	fn playing_track(&self) -> Result<Option<FullTrack>, failure::Error> {
@@ -434,8 +442,10 @@ impl Controller {
 			read_number(0, devs.len()).map(|n| devs.remove(n))
 		})
 	}
-	
+
 	fn get_playlists(&self) -> Result<Vec<SimplifiedPlaylist>, failure::Error> {
-		self.client.current_user_playlists(Some(50), None).map(|p| p.items)
+		self.client
+			.current_user_playlists(Some(50), None)
+			.map(|p| p.items)
 	}
 }
