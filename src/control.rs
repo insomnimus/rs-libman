@@ -28,26 +28,28 @@ impl Controller {
         let re_vol = Regex::new(r"^\s*(\-|\+)\s*(\d+)\s*$").unwrap();
         loop {
             let input = prompt(&self.prompt);
-            // check for some builtins
-            if input.is_empty() {
-                self.toggle();
+
+            if let Err(e) = if input.is_empty() {
+                self.toggle()
             } else if input.starts_with("prompt") {
-                self.set_prompt(input.strip_prefix("prompt").unwrap_or(""));
+                self.set_prompt(input.strip_prefix("prompt").unwrap_or(""))
             } else if let Some(cap) = re_vol.captures(&input) {
                 let op = cap.get(1).unwrap().as_str();
                 let n = cap.get(2).unwrap().as_str().parse::<i32>().unwrap();
-                self.change_volume(if op == "+" { n } else { -n });
+                self.change_volume(if op == "+" { n } else { -n })
             } else {
                 // check handlers
                 let (cmd, args) = split_command(&input);
-                let h = match self.handlers.iter().find(|h| h.is_match(cmd)) {
+                let cmd = match self.handlers.iter().find(|h| h.is_match(cmd)) {
                     None => {
                         println!("{} is not a known command", cmd);
+                        continue;
                     }
-                    Some(h) => {
-                        self.exec_cmd(h.cmd, args);
-                    }
+                    Some(h) => h.cmd,
                 };
+                self.exec_cmd(cmd, args)
+            } {
+                println!("error: {}", e);
             }
         }
     }
@@ -85,14 +87,14 @@ impl Controller {
             // misc commands
             PlayUserPlaylist => self.play_user_playlist(args),
             Show => self.show(args),
-            Device => self.set_device(args),
+            SetDevice => self.set_device(args),
         }
     }
 
     fn show_usage(&self, cmd: Cmd) {
-        self.handlers.iter().find(|h| h.cmd == cmd).map(|h| {
+        if let Some(h) = self.handlers.iter().find(|h| h.cmd == cmd) {
             h.show_usage();
-        });
+        }
     }
 }
 
@@ -244,42 +246,42 @@ impl Controller {
 
 // search commands
 impl Controller {
-    fn search(&self, arg: Option<&str>) -> SpotifyResult {
+    fn search(&self, _arg: Option<&str>) -> SpotifyResult {
         todo!()
     }
 
-    fn search_track(&self, arg: Option<&str>) -> SpotifyResult {
+    fn search_track(&self, _arg: Option<&str>) -> SpotifyResult {
         todo!()
     }
 
-    fn search_artist(&self, arg: Option<&str>) -> SpotifyResult {
+    fn search_artist(&self, _arg: Option<&str>) -> SpotifyResult {
         todo!()
     }
 
-    fn search_album(&self, arg: Option<&str>) -> SpotifyResult {
+    fn search_album(&self, _arg: Option<&str>) -> SpotifyResult {
         todo!()
     }
 
-    fn search_playlist(&self, arg: Option<&str>) -> SpotifyResult {
+    fn search_playlist(&self, _arg: Option<&str>) -> SpotifyResult {
         todo!()
     }
 }
 
 // play-first commands
 impl Controller {
-    fn play_first_track(&self, arg: Option<&str>) -> SpotifyResult {
+    fn play_first_track(&self, _arg: Option<&str>) -> SpotifyResult {
         todo!()
     }
 
-    fn play_first_album(&self, arg: Option<&str>) -> SpotifyResult {
+    fn play_first_album(&self, _arg: Option<&str>) -> SpotifyResult {
         todo!()
     }
 
-    fn play_first_artist(&self, arg: Option<&str>) -> SpotifyResult {
+    fn play_first_artist(&self, _arg: Option<&str>) -> SpotifyResult {
         todo!()
     }
 
-    fn play_first_playlist(&self, arg: Option<&str>) -> SpotifyResult {
+    fn play_first_playlist(&self, _arg: Option<&str>) -> SpotifyResult {
         todo!()
     }
 }
@@ -338,11 +340,11 @@ impl Controller {
             })
     }
 
-    fn shuffle(&self, arg: Option<&str>) -> SpotifyResult {
+    fn shuffle(&self, _arg: Option<&str>) -> SpotifyResult {
         todo!()
     }
 
-    fn repeat(&self, arg: Option<&str>) -> SpotifyResult {
+    fn repeat(&self, _arg: Option<&str>) -> SpotifyResult {
         todo!()
     }
 
@@ -384,17 +386,17 @@ impl Controller {
         }
     }
 
-    fn show(&self, arg: Option<&str>) -> SpotifyResult {
+    fn show(&self, _arg: Option<&str>) -> SpotifyResult {
         todo!()
     }
 
-    fn play_user_playlist(&mut self, arg: Option<&str>) -> SpotifyResult {
+    fn play_user_playlist(&mut self, _arg: Option<&str>) -> SpotifyResult {
         todo!()
     }
 }
 
 impl Controller {
-    fn choose_playlist(&self, arg: Option<&str>) -> Result<Option<FullPlaylist>, failure::Error> {
+    fn choose_playlist(&self, _arg: Option<&str>) -> Result<Option<FullPlaylist>, failure::Error> {
         todo!()
     }
 
@@ -414,16 +416,14 @@ impl Controller {
         let mut devs = self.client.device()?.devices;
         Ok(if let Some(name) = arg {
             devs.into_iter().find(|d| d.name.eq(name))
+        } else if devs.is_empty() {
+            println!("did not detect any device");
+            None
         } else {
-            if devs.is_empty() {
-                println!("did not detect any device");
-                None
-            } else {
-                for (i, d) in devs.iter().enumerate() {
-                    println!("# {} : {}", i, &d.name);
-                }
-                read_number(0, devs.len()).map(|n| devs.remove(n))
+            for (i, d) in devs.iter().enumerate() {
+                println!("# {} : {}", i, &d.name);
             }
+            read_number(0, devs.len()).map(|n| devs.remove(n))
         })
     }
 }

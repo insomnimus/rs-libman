@@ -78,7 +78,7 @@ pub fn read_option_bool(msg: &str) -> Option<bool> {
 }
 
 /// This would be `splitn_whitespace(2)` if it existed.
-pub fn split_command<'a>(s: &'a str) -> (&'a str, Option<&'a str>) {
+pub fn split_command(s: &str) -> (&str, Option<&str>) {
     let first_space = s
         .chars()
         .enumerate()
