@@ -13,6 +13,7 @@ pub fn read_input(msg: &str) -> String {
 		.lines()
 		.next()
 		.unwrap()
+		.map(|s| s.trim().to_string())
 		.unwrap_or_default()
 }
 
@@ -33,6 +34,7 @@ pub fn prompt(msg: &str) -> String {
 		.lines()
 		.next()
 		.unwrap()
+		.map(|s| s.trim().to_string())
 		.unwrap_or_default()
 }
 
@@ -75,6 +77,24 @@ pub fn read_option_bool(msg: &str) -> Option<bool> {
 	}
 }
 
+/// This would be `splitn_whitespace(2)` if it existed.
 pub fn split_command<'a>(s: &'a str) -> (&'a str, Option<&'a str>) {
-	todo!()
+	let first_space= s.chars()
+	.enumerate()
+	.find(|(_, c)| c.is_whitespace())
+	.map(|(i,_)| i);
+	
+	if first_space.is_none() {
+		return (s, None);
+	}
+	
+	let first_space= first_space.unwrap();
+	let arg= s.chars()
+	.skip(first_space)
+	.enumerate()
+	.find(|(_, c)| !c.is_whitespace())
+	.map(|(i, _)| i + first_space)
+	.map(|i| &s[i+1..]);
+	
+	(&s[..first_space], arg)
 }
