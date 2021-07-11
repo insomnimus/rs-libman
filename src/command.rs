@@ -1,34 +1,34 @@
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Cmd {
-    // search commands
-    Search,
-    SearchTrack,
-    SearchArtist,
-    SearchAlbum,
-    SearchPlaylist,
+	// search commands
+	Search,
+	SearchTrack,
+	SearchArtist,
+	SearchAlbum,
+	SearchPlaylist,
 
-    // play-first commands (similar to "i'm feeling lucky")
-    PlayTrack,
-    PlayAlbum,
-    PlayPlaylist,
-    PlayArtist,
+	// play-first commands (similar to "i'm feeling lucky")
+	PlayTrack,
+	PlayAlbum,
+	PlayPlaylist,
+	PlayArtist,
 
-    // player commands
-    SetVolume,
-    Shuffle,
-    Repeat,
-    Next,
-    Prev,
+	// player commands
+	SetVolume,
+	Shuffle,
+	Repeat,
+	Next,
+	Prev,
 
-    // library commands
-    SavePlaying,
-    RemovePlaying,
-    CreatePlaylist,
-    EditPlaylist,
-    DeletePlaylist,
+	// library commands
+	SavePlaying,
+	RemovePlaying,
+	CreatePlaylist,
+	EditPlaylist,
+	DeletePlaylist,
 
-    // misc
-    PlayUserPlaylist,
-    SetDevice,
-    Show,
+	// misc
+	PlayUserPlaylist,
+	SetDevice,
+	Show,
 }
