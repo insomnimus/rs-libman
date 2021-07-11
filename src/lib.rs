@@ -75,6 +75,6 @@ pub fn read_option_bool(msg: &str) -> Option<bool> {
 	}
 }
 
-pub fn split_command<'a> (s: &'a str) -> (&'a str, Option<&'a str>) {
+pub fn split_command<'a>(s: &'a str) -> (&'a str, Option<&'a str>) {
 	todo!()
 }

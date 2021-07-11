@@ -1,5 +1,5 @@
-use std::borrow::Cow;
 use crate::command::Cmd;
+use std::borrow::Cow;
 
 pub struct Handler {
 	pub name: Cow<'static, str>,
@@ -23,7 +23,7 @@ usage:
 
 {help}",
 			name = &self.name,
-			aliases = &self.aliases,
+			aliases = self.aliases.join(", "),
 			usage = &self.usage,
 			help = &self.help
 		);
