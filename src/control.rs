@@ -48,9 +48,7 @@ impl Controller {
 			}
 		}
 	}
-}
 
-impl Controller {
 	fn exec_cmd(&mut self, c: Cmd, args: Option<&str>) -> SpotifyResult {
 		use Cmd::*;
 		match c {
