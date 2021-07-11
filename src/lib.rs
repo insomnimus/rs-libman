@@ -94,7 +94,12 @@ pub fn split_command<'a>(s: &'a str) -> (&'a str, Option<&'a str>) {
 	.enumerate()
 	.find(|(_, c)| !c.is_whitespace())
 	.map(|(i, _)| i + first_space)
-	.map(|i| &s[i+1..]);
+	.map(|i| &s[i+1..])
+	.and_then(|s| if s.is_empty() {
+		None
+	}else{
+		Some(s)
+	});
 	
 	(&s[..first_space], arg)
 }

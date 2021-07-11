@@ -1,3 +1,7 @@
+use std::{
+	mem,
+	convert::TryFrom,
+};
 use crate::{
 	command::Cmd, handler::Handler, prompt, read_bool, read_input, read_option, read_option_bool,
 	split_command, SpotifyResult,
@@ -84,6 +88,12 @@ impl Controller {
 			Show => self.show(args),
 			Device => self.set_device(args),
 		}
+	}
+	
+	fn show_usage(&self, cmd: Cmd) {
+		self.handlers.iter().find(|h| h.cmd==cmd).map(|h| {
+			h.show_usage();
+		});
 	}
 }
 
@@ -278,11 +288,53 @@ impl Controller {
 // player commands
 impl Controller {
 	fn set_volume(&self, arg: Option<&str>) -> SpotifyResult {
-		todo!()
+		let n = match arg{
+			Some(s) => {
+				match s.parse::<u8>() {
+					Ok(n)=>n,
+					Err(_)=> {
+						println!("{}: the value must be an integer between 0 and 100", s);
+						return Ok(());
+					}
+				}
+			}
+			None=> {
+				self.show_usage(Cmd::SetVolume);
+				return Ok(());
+			}
+		};
+		
+		let n = if n > 100 { 100_u8 } else {n};
+		
+		self.client.volume(n, None)
 	}
 
-	fn change_volume(&self, n: i32) -> SpotifyResult {
-		todo!()
+	fn change_volume(&self, mut n: i32) -> SpotifyResult {
+		let mut active_device = match self
+		.client
+		.device()?
+		.devices.into_iter().find(|d| d.is_active) {
+			Some(d)=> d,
+			None=> {
+				println!("no active device detected");
+				return Ok(());
+			}
+		};
+		
+		n += active_device.volume_percent as i32;
+		if n < 0{
+			n = 0;
+		}else if n > 100 {
+			n = 100;
+		}
+		
+		self.client.volume(
+		u8::try_from(n).unwrap(),
+		Some(mem::take(&mut active_device.id)),
+		)
+		.map(|_| {
+			println!("{}: set to {}%", &active_device.name, n);
+		})
 	}
 
 	fn shuffle(&self, arg: Option<&str>) -> SpotifyResult {
