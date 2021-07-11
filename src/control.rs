@@ -1,6 +1,6 @@
 use crate::{
     command::Cmd, handler::Handler, prompt, read_bool, read_input, read_number, read_option,
-    read_option_bool, split_command, SpotifyResult,
+    read_option_bool, search, split_command, SpotifyResult,
 };
 use regex::Regex;
 use rspotify::{
@@ -265,8 +265,35 @@ impl Controller {
 
 // play-first commands
 impl Controller {
-    fn play_first_track(&self, _arg: Option<&str>) -> SpotifyResult {
-        todo!()
+    fn play_first_track(&mut self, arg: Option<&str>) -> SpotifyResult {
+        let arg = match arg {
+            Some(s) => s,
+            None => {
+                self.show_usage(Cmd::PlayTrack);
+                return Ok(());
+            }
+        };
+        let query = crate::track_query(arg);
+        let tracks = search::tracks(&self.client, &query)?;
+        let track = match tracks.get(0) {
+            Some(t) => t,
+            None => {
+                println!("no result for '{}'", &query);
+                return Ok(());
+            }
+        };
+
+        self.client
+            .start_playback(None, None, Some(vec![track.uri.clone()]), None, None)
+            .map(|_| {
+                self.playing = true;
+                println!(
+                    "playing {} [{}] by {}",
+                    &track.name,
+                    &track.album.name,
+                    crate::join_artists(&track.artists)
+                );
+            })
     }
 
     fn play_first_album(&self, _arg: Option<&str>) -> SpotifyResult {

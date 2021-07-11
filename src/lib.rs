@@ -1,8 +1,12 @@
 pub mod command;
 pub mod control;
 pub mod handler;
+pub mod search;
 
+use itertools::Itertools;
+use rspotify::model::artist::SimplifiedArtist;
 use std::io::{self, BufRead, Write};
+
 pub type SpotifyResult = ::std::result::Result<(), failure::Error>;
 
 pub fn read_input(msg: &str) -> String {
@@ -114,5 +118,50 @@ pub fn read_number(min: usize, max: usize) -> Option<usize> {
         } else {
             println!("invalid input, please enter again");
         }
+    }
+}
+
+pub fn join_artists(artists: &[SimplifiedArtist]) -> String {
+    match artists.len() {
+        0 => String::default(),
+        1 => artists[0].name.clone(),
+        2 => {
+            format!("{} and {}", &artists[0].name, &artists[1].name)
+        }
+        _ => {
+            format!(
+                "{} and {}",
+                {
+                    artists
+                        .iter()
+                        .take(artists.len() - 1)
+                        .map(|a| &a.name)
+                        .join(", ")
+                },
+                &artists.last().unwrap().name,
+            )
+        }
+    }
+}
+
+pub fn track_query(s: &str) -> String {
+    if s.contains("::") {
+        let mut split = s.splitn(2, "::");
+        let track = split.next().unwrap_or_default().trim();
+        if let Some(art) = split.next() {
+            format!("track:{} artist:{}", track, art.trim())
+        } else {
+            format!("track: {}", track)
+        }
+    } else if s.contains(" by ") {
+        let mut split = s.splitn(2, " by ");
+        let track = split.next().unwrap_or_default().trim();
+        if let Some(art) = split.next() {
+            format!("track: {} artist: {}", track, art.trim())
+        } else {
+            format!("track: {}", track)
+        }
+    } else {
+        format!("track: {}", s)
     }
 }
