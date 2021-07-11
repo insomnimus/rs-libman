@@ -394,15 +394,24 @@ impl Controller {
     }
 
     fn toggle(&mut self) -> SpotifyResult {
-        todo!()
+        self.playing = !self.playing;
+        if self.playing {
+            self.client.start_playback(None, None, None, None, None)
+        } else {
+            self.client.pause_playback(None)
+        }
     }
 
     fn prev(&mut self) -> SpotifyResult {
-        todo!()
+        self.client.previous_track(None).map(|_| {
+            self.playing = true;
+        })
     }
 
     fn next(&mut self) -> SpotifyResult {
-        todo!()
+        self.client.next_track(None).map(|_| {
+            self.playing = true;
+        })
     }
 }
 
