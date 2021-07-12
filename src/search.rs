@@ -47,3 +47,47 @@ pub fn playlists(client: &Spotify, query: &str) -> Result<Vec<SimplifiedPlaylist
         vec![]
     })
 }
+
+pub fn track_query(s: &str) -> String {
+    if s.contains("::") {
+        let mut split = s.splitn(2, "::");
+        let track = split.next().unwrap_or_default().trim();
+        if let Some(art) = split.next() {
+            format!("track:{} artist:{}", track, art.trim())
+        } else {
+            format!("track:{}", track)
+        }
+    } else if s.contains(" by ") {
+        let mut split = s.splitn(2, " by ");
+        let track = split.next().unwrap_or_default().trim();
+        if let Some(art) = split.next() {
+            format!("track:{} artist:{}", track, art.trim())
+        } else {
+            format!("track:{}", track)
+        }
+    } else {
+        s.to_string()
+    }
+}
+
+pub fn album_query(s: &str) -> String {
+    if s.contains("::") {
+        let mut split = s.splitn(2, "::");
+        let album = split.next().unwrap_or_default().trim();
+        if let Some(art) = split.next() {
+            format!("album:{} artist:{}", album, art.trim())
+        } else {
+            format!("album:{}", album)
+        }
+    } else if s.contains(" by ") {
+        let mut split = s.splitn(2, " by ");
+        let album = split.next().unwrap_or_default().trim();
+        if let Some(art) = split.next() {
+            format!("album:{} artist:{}", album, art.trim())
+        } else {
+            format!("album:{}", album)
+        }
+    } else {
+        s.to_string()
+    }
+}

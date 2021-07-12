@@ -8,10 +8,10 @@ pub enum Cmd {
     SearchPlaylist,
 
     // play-first commands (similar to "i'm feeling lucky")
-    PlayTrack,
-    PlayAlbum,
-    PlayPlaylist,
-    PlayArtist,
+    PlayFirstTrack,
+    PlayFirstAlbum,
+    PlayFirstPlaylist,
+    PlayFirstArtist,
 
     // player commands
     SetVolume,

@@ -143,25 +143,3 @@ pub fn join_artists(artists: &[SimplifiedArtist]) -> String {
         }
     }
 }
-
-pub fn track_query(s: &str) -> String {
-    if s.contains("::") {
-        let mut split = s.splitn(2, "::");
-        let track = split.next().unwrap_or_default().trim();
-        if let Some(art) = split.next() {
-            format!("track:{} artist:{}", track, art.trim())
-        } else {
-            format!("track: {}", track)
-        }
-    } else if s.contains(" by ") {
-        let mut split = s.splitn(2, " by ");
-        let track = split.next().unwrap_or_default().trim();
-        if let Some(art) = split.next() {
-            format!("track: {} artist: {}", track, art.trim())
-        } else {
-            format!("track: {}", track)
-        }
-    } else {
-        format!("track: {}", s)
-    }
-}

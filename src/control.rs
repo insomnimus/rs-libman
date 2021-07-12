@@ -5,7 +5,9 @@ use crate::{
 use regex::Regex;
 use rspotify::{
     blocking::client::Spotify,
-    model::{device::Device, playlist::SimplifiedPlaylist, track::FullTrack, PlayingItem},
+    model::{
+        device::Device, offset::Offset, playlist::SimplifiedPlaylist, track::FullTrack, PlayingItem,
+    },
     senum::{AdditionalType, RepeatState},
 };
 use std::{convert::TryFrom, mem};
@@ -60,11 +62,11 @@ impl Controller {
             SearchPlaylist => self.search_playlist(args),
             SearchAlbum => self.search_album(args),
 
-            // play commands (i'm feeling lucky kind)
-            PlayTrack => self.play_first_track(args),
-            PlayAlbum => self.play_first_album(args),
-            PlayArtist => self.play_first_artist(args),
-            PlayPlaylist => self.play_first_playlist(args),
+            // play-first commands
+            PlayFirstTrack => self.play_first_track(args),
+            PlayFirstAlbum => self.play_first_album(args),
+            PlayFirstArtist => self.play_first_artist(args),
+            PlayFirstPlaylist => self.play_first_playlist(args),
 
             // player commands
             SetVolume => self.set_volume(args),
@@ -269,11 +271,11 @@ impl Controller {
         let arg = match arg {
             Some(s) => s,
             None => {
-                self.show_usage(Cmd::PlayTrack);
+                self.show_usage(Cmd::PlayFirstTrack);
                 return Ok(());
             }
         };
-        let query = crate::track_query(arg);
+        let query = search::track_query(arg);
         let tracks = search::tracks(&self.client, &query)?;
         let track = match tracks.get(0) {
             Some(t) => t,
@@ -296,8 +298,44 @@ impl Controller {
             })
     }
 
-    fn play_first_album(&self, _arg: Option<&str>) -> SpotifyResult {
-        todo!()
+    fn play_first_album(&mut self, arg: Option<&str>) -> SpotifyResult {
+        let arg = match arg {
+            Some(s) => s,
+            None => {
+                self.show_usage(Cmd::PlayFirstAlbum);
+                return Ok(());
+            }
+        };
+        let query = search::album_query(arg);
+        let albums = search::albums(&self.client, &query)?;
+
+        let alb = match albums.get(0) {
+            Some(a) => a,
+            None => {
+                println!("no result for {}", &query);
+                return Ok(());
+            }
+        };
+        self.client
+            .start_playback(
+                None,
+                // TODO: implement this cleanly (self.play_album)
+                Some(alb.uri.clone().unwrap_or_default()),
+                None,
+                Some(Offset {
+                    position: Some(0),
+                    uri: None,
+                }),
+                None,
+            )
+            .map(|_| {
+                self.playing = true;
+                println!(
+                    "playing {} by {}",
+                    &alb.name,
+                    crate::join_artists(&alb.artists)
+                );
+            })
     }
 
     fn play_first_artist(&self, _arg: Option<&str>) -> SpotifyResult {
