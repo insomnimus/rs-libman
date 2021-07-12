@@ -6,7 +6,8 @@ use regex::Regex;
 use rspotify::{
     blocking::client::Spotify,
     model::{
-        device::Device, offset::Offset, playlist::SimplifiedPlaylist, track::FullTrack, PlayingItem,
+        album::SimplifiedAlbum, artist::FullArtist, device::Device, offset::Offset,
+        playlist::SimplifiedPlaylist, track::FullTrack, PlayingItem,
     },
     senum::{AdditionalType, RepeatState},
 };
@@ -130,7 +131,7 @@ impl Controller {
     }
 
     fn edit_playlist(&self, arg: Option<&str>) -> SpotifyResult {
-        let pl = match self.choose_playlist(arg)? {
+        let pl = match self.choose_user_playlist(arg)? {
             None => {
                 return Ok(());
             }
@@ -160,7 +161,7 @@ impl Controller {
     }
 
     fn delete_playlist(&mut self, arg: Option<&str>) -> SpotifyResult {
-        let pl = match self.choose_playlist(arg)? {
+        let pl = match self.choose_user_playlist(arg)? {
             None => {
                 println!("cancelled");
                 return Ok(());
@@ -194,7 +195,7 @@ impl Controller {
             Some(t) => t,
         };
 
-        let pl = match self.choose_playlist(arg)? {
+        let pl = match self.choose_user_playlist(arg)? {
             None => {
                 println!("cancelled");
                 return Ok(());
@@ -222,7 +223,7 @@ impl Controller {
             }
         };
 
-        let pl = match self.choose_playlist(arg)? {
+        let pl = match self.choose_user_playlist(arg)? {
             Some(p) => p,
             None => {
                 println!("cancelled");
@@ -285,17 +286,7 @@ impl Controller {
             }
         };
 
-        self.client
-            .start_playback(None, None, Some(vec![track.uri.clone()]), None, None)
-            .map(|_| {
-                self.playing = true;
-                println!(
-                    "playing {} [{}] by {}",
-                    &track.name,
-                    &track.album.name,
-                    crate::join_artists(&track.artists)
-                );
-            })
+        self.play_track(track)
     }
 
     fn play_first_album(&mut self, arg: Option<&str>) -> SpotifyResult {
@@ -316,34 +307,50 @@ impl Controller {
                 return Ok(());
             }
         };
-        self.client
-            .start_playback(
-                None,
-                // TODO: implement this cleanly (self.play_album)
-                Some(alb.uri.clone().unwrap_or_default()),
-                None,
-                Some(Offset {
-                    position: Some(0),
-                    uri: None,
-                }),
-                None,
-            )
-            .map(|_| {
-                self.playing = true;
-                println!(
-                    "playing {} by {}",
-                    &alb.name,
-                    crate::join_artists(&alb.artists)
-                );
-            })
+
+        self.play_album(alb)
     }
 
-    fn play_first_artist(&self, _arg: Option<&str>) -> SpotifyResult {
-        todo!()
+    fn play_first_artist(&mut self, arg: Option<&str>) -> SpotifyResult {
+        let arg = match arg {
+            Some(a) => a,
+            None => {
+                self.show_usage(Cmd::PlayFirstArtist);
+                return Ok(());
+            }
+        };
+
+        let artists = search::artists(&self.client, arg)?;
+        let art = match artists.get(0) {
+            Some(a) => a,
+            None => {
+                println!("no result for {}", arg);
+                return Ok(());
+            }
+        };
+
+        self.play_artist(art)
     }
 
-    fn play_first_playlist(&self, _arg: Option<&str>) -> SpotifyResult {
-        todo!()
+    fn play_first_playlist(&mut self, arg: Option<&str>) -> SpotifyResult {
+        let arg = match arg {
+            Some(a) => a,
+            None => {
+                self.show_usage(Cmd::PlayFirstPlaylist);
+                return Ok(());
+            }
+        };
+
+        let pls = search::playlists(&self.client, arg)?;
+        let pl = match pls.get(0) {
+            Some(p) => p,
+            None => {
+                println!("no result for {}", arg);
+                return Ok(());
+            }
+        };
+
+        self.play_playlist(pl)
     }
 }
 
@@ -510,7 +517,7 @@ impl Controller {
     }
 
     fn play_user_playlist(&mut self, arg: Option<&str>) -> SpotifyResult {
-        if let Some(pl) = self.choose_playlist(arg)? {
+        if let Some(pl) = self.choose_user_playlist(arg)? {
             self.client
                 .start_playback(None, Some(pl.uri.clone()), None, None, None)
                 .map(|_| {
@@ -527,9 +534,9 @@ impl Controller {
 
 // utilities
 impl Controller {
-    fn choose_playlist(
+    fn choose_user_playlist(
         &self,
-        _arg: Option<&str>,
+        arg: Option<&str>,
     ) -> Result<Option<SimplifiedPlaylist>, failure::Error> {
         let mut pls = self.get_playlists()?;
         if pls.is_empty() {
@@ -537,7 +544,16 @@ impl Controller {
             return Ok(None);
         }
 
-        Ok(read_number(0, pls.len()).map(|n| pls.remove(n)))
+        Ok(if let Some(a) = arg {
+            pls.into_iter()
+                .find(|p| p.name.to_lowercase().eq(&a.to_lowercase()))
+                .or_else(|| {
+                    println!("you don't seem to have a playlist named {}", a);
+                    None
+                })
+        } else {
+            read_number(0, pls.len()).map(|n| pls.remove(n))
+        })
     }
 
     fn playing_track(&self) -> Result<Option<FullTrack>, failure::Error> {
@@ -571,5 +587,67 @@ impl Controller {
         self.client
             .current_user_playlists(Some(50), None)
             .map(|p| p.items)
+    }
+}
+
+impl Controller {
+    fn play_track(&mut self, track: &FullTrack) -> SpotifyResult {
+        self.client
+            .start_playback(None, None, Some(vec![track.uri.clone()]), None, None)
+            .map(|_| {
+                self.playing = true;
+                println!(
+                    "playing {} [{}] by {}",
+                    &track.name,
+                    &track.album.name,
+                    crate::join_artists(&track.artists)
+                );
+            })
+    }
+
+    fn play_album(&mut self, alb: &SimplifiedAlbum) -> SpotifyResult {
+        if let Some(uri) = alb.uri.as_ref() {
+            self.client.start_playback(
+                None,
+                Some(uri.clone()),
+                None,
+                Some(Offset {
+                    position: Some(0),
+                    uri: None,
+                }),
+                None,
+            )
+        } else if let Some(id) = alb.id.as_ref() {
+            self.client.start_playback(
+                None,
+                Some(id.clone()),
+                None,
+                Some(Offset {
+                    position: Some(0),
+                    uri: None,
+                }),
+                None,
+            )
+        } else {
+            // can't do anything here, uri and id unavailable
+            println!("error: the track uri and id can't be found");
+            return Ok(());
+        }
+        .map(|_| {
+            self.playing = true;
+            println!(
+                "playing {} by {}",
+                &alb.name,
+                crate::join_artists(&alb.artists)
+            );
+        })
+    }
+
+    fn play_artist(&mut self, _art: &FullArtist) -> SpotifyResult {
+        todo!()
+    }
+
+    fn play_playlist(&mut self, _pl: &SimplifiedPlaylist) -> SpotifyResult {
+        todo!()
     }
 }
