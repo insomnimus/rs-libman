@@ -643,11 +643,40 @@ impl Controller {
         })
     }
 
-    fn play_artist(&mut self, _art: &FullArtist) -> SpotifyResult {
-        todo!()
+    fn play_artist(&mut self, art: &FullArtist) -> SpotifyResult {
+        self.client
+            .start_playback(
+                None,
+                Some(art.uri.clone()),
+                None,
+                Some(Offset {
+                    position: Some(0),
+                    uri: None,
+                }),
+                None,
+            )
+            .map(|_| {
+                self.playing = true;
+                println!("playing {}", &art.name);
+            })
     }
 
-    fn play_playlist(&mut self, _pl: &SimplifiedPlaylist) -> SpotifyResult {
-        todo!()
+    fn play_playlist(&mut self, pl: &SimplifiedPlaylist) -> SpotifyResult {
+        // TODO: fetch all the tracks here
+        self.client
+            .start_playback(
+                None,
+                Some(pl.uri.clone()),
+                None,
+                Some(Offset {
+                    position: Some(0),
+                    uri: None,
+                }),
+                None,
+            )
+            .map(|_| {
+                self.playing = true;
+                println!("playing {}", &pl.name);
+            })
     }
 }
