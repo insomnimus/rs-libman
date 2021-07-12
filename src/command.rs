@@ -28,6 +28,7 @@ pub enum Cmd {
     DeletePlaylist,
 
     // misc
+    Help,
     PlayUserPlaylist,
     SetDevice,
     Show,

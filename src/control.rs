@@ -1,3 +1,5 @@
+pub mod search_cmd;
+
 use crate::{
     command::Cmd, handler::Handler, prompt, read_bool, read_input, read_number, read_option,
     read_option_bool, search, split_command, SpotifyResult,
@@ -84,6 +86,7 @@ impl Controller {
             RemovePlaying => self.remove_playing(args),
 
             // misc commands
+            Help => self.show_help(args),
             PlayUserPlaylist => self.play_user_playlist(args),
             Show => self.show(args),
             SetDevice => self.set_device(args),
@@ -240,29 +243,6 @@ impl Controller {
             .map(|_| {
                 println!("removed from {}", &pl.name);
             })
-    }
-}
-
-// search commands
-impl Controller {
-    fn search(&self, _arg: Option<&str>) -> SpotifyResult {
-        todo!()
-    }
-
-    fn search_track(&self, _arg: Option<&str>) -> SpotifyResult {
-        todo!()
-    }
-
-    fn search_artist(&self, _arg: Option<&str>) -> SpotifyResult {
-        todo!()
-    }
-
-    fn search_album(&self, _arg: Option<&str>) -> SpotifyResult {
-        todo!()
-    }
-
-    fn search_playlist(&self, _arg: Option<&str>) -> SpotifyResult {
-        todo!()
     }
 }
 
@@ -489,6 +469,24 @@ impl Controller {
 
 // misc commands
 impl Controller {
+    fn show_help(&self, arg: Option<&str>) -> SpotifyResult {
+        if let Some(a) = arg {
+            if let Some(h) = self.handlers.iter().find(|h| h.is_match(a)) {
+                h.show_help();
+            } else {
+                println!(
+                    "{} did not match any command or alias\nrun `help` for a list of the commands",
+                    a
+                );
+            }
+        } else {
+            for h in &self.handlers {
+                h.show_short_help();
+            }
+        }
+        Ok(())
+    }
+
     fn set_prompt(&mut self, s: &str) -> SpotifyResult {
         let s = s.trim();
         if s.is_empty() {
@@ -552,6 +550,9 @@ impl Controller {
                     None
                 })
         } else {
+            for (i, p) in pls.iter().enumerate() {
+                println!("#{no:2} | {name}", no = i, name = &p.name);
+            }
             read_number(0, pls.len()).map(|n| pls.remove(n))
         })
     }

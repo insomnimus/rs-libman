@@ -143,3 +143,16 @@ pub fn join_artists(artists: &[SimplifiedArtist]) -> String {
         }
     }
 }
+
+pub fn equalfold(a: &str, b: &str) -> bool {
+    if a.len() != b.len() {
+        false
+    } else {
+        for (x, y) in a.chars().zip(b.chars()) {
+            if x != y && !x.to_uppercase().eq(y.to_uppercase()) {
+                return false;
+            }
+        }
+        true
+    }
+}
