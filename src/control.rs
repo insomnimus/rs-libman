@@ -257,7 +257,7 @@ impl Controller {
             }
         };
         let query = search::track_query(arg);
-        let tracks = search::tracks(&self.client, &query)?;
+        let tracks = search::tracks(&self.client, &query, 20)?;
         let track = match tracks.get(0) {
             Some(t) => t,
             None => {
@@ -278,7 +278,7 @@ impl Controller {
             }
         };
         let query = search::album_query(arg);
-        let albums = search::albums(&self.client, &query)?;
+        let albums = search::albums(&self.client, &query, 20)?;
 
         let alb = match albums.get(0) {
             Some(a) => a,
@@ -300,7 +300,7 @@ impl Controller {
             }
         };
 
-        let artists = search::artists(&self.client, arg)?;
+        let artists = search::artists(&self.client, arg, 20)?;
         let art = match artists.get(0) {
             Some(a) => a,
             None => {
@@ -321,7 +321,7 @@ impl Controller {
             }
         };
 
-        let pls = search::playlists(&self.client, arg)?;
+        let pls = search::playlists(&self.client, arg, 20)?;
         let pl = match pls.get(0) {
             Some(p) => p,
             None => {

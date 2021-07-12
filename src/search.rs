@@ -9,8 +9,8 @@ use rspotify::{
 
 type Result<T> = ::std::result::Result<T, failure::Error>;
 
-pub fn tracks(client: &Spotify, query: &str) -> Result<Vec<FullTrack>> {
-    let page = client.search(query, SearchType::Track, 20, 0, None, None)?;
+pub fn tracks(client: &Spotify, query: &str, limit: u32) -> Result<Vec<FullTrack>> {
+    let page = client.search(query, SearchType::Track, limit, 0, None, None)?;
     Ok(if let SearchResult::Tracks(p) = page {
         p.items
     } else {
@@ -18,8 +18,8 @@ pub fn tracks(client: &Spotify, query: &str) -> Result<Vec<FullTrack>> {
     })
 }
 
-pub fn artists(client: &Spotify, query: &str) -> Result<Vec<FullArtist>> {
-    let page = client.search(query, SearchType::Artist, 20, 0, None, None)?;
+pub fn artists(client: &Spotify, query: &str, limit: u32) -> Result<Vec<FullArtist>> {
+    let page = client.search(query, SearchType::Artist, limit, 0, None, None)?;
 
     Ok(if let SearchResult::Artists(p) = page {
         p.items
@@ -28,8 +28,8 @@ pub fn artists(client: &Spotify, query: &str) -> Result<Vec<FullArtist>> {
     })
 }
 
-pub fn albums(client: &Spotify, query: &str) -> Result<Vec<SimplifiedAlbum>> {
-    let page = client.search(query, SearchType::Album, 20, 0, None, None)?;
+pub fn albums(client: &Spotify, query: &str, limit: u32) -> Result<Vec<SimplifiedAlbum>> {
+    let page = client.search(query, SearchType::Album, limit, 0, None, None)?;
 
     Ok(if let SearchResult::Albums(p) = page {
         p.items
@@ -38,8 +38,8 @@ pub fn albums(client: &Spotify, query: &str) -> Result<Vec<SimplifiedAlbum>> {
     })
 }
 
-pub fn playlists(client: &Spotify, query: &str) -> Result<Vec<SimplifiedPlaylist>> {
-    let page = client.search(query, SearchType::Playlist, 20, 0, None, None)?;
+pub fn playlists(client: &Spotify, query: &str, limit: u32) -> Result<Vec<SimplifiedPlaylist>> {
+    let page = client.search(query, SearchType::Playlist, limit, 0, None, None)?;
 
     Ok(if let SearchResult::Playlists(p) = page {
         p.items
