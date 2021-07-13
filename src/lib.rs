@@ -1,6 +1,7 @@
 pub mod command;
 pub mod control;
 pub mod handler;
+pub mod playlist;
 pub mod search;
 
 use itertools::Itertools;

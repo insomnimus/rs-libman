@@ -1,8 +1,6 @@
 use super::Controller;
-use crate::{command::Cmd, read_number, search, SpotifyResult};
-use rspotify::model::{
-    album::SimplifiedAlbum, artist::FullArtist, playlist::SimplifiedPlaylist, track::FullTrack,
-};
+use crate::{command::Cmd, playlist::Playlist, read_number, search, SpotifyResult};
+use rspotify::model::{album::SimplifiedAlbum, artist::FullArtist, track::FullTrack};
 
 impl Controller {
     pub fn search_track(&mut self, arg: Option<&str>) -> SpotifyResult {
@@ -119,9 +117,9 @@ impl Controller {
             println!(
                 "#{no:2} | {name} from {owner}",
                 no = i,
-                name = &p.name,
-                owner = &p
-                    .owner
+                name = p.name(),
+                owner = p
+                    .owner()
                     .display_name
                     .as_ref()
                     .map(|s| &s[..])
@@ -184,7 +182,7 @@ enum SearchResult {
     Track(FullTrack),
     Album(SimplifiedAlbum),
     Artist(FullArtist),
-    Playlist(SimplifiedPlaylist),
+    Playlist(Playlist),
 }
 
 impl SearchResult {
@@ -221,9 +219,9 @@ impl SearchResult {
                     "#{no:2}: {kind:8} | {name} from {owner}",
                     no = no,
                     kind = "playlist",
-                    name = &p.name,
+                    name = p.name(),
                     owner = p
-                        .owner
+                        .owner()
                         .display_name
                         .as_ref()
                         .map(|s| &s[..])

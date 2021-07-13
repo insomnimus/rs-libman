@@ -1,9 +1,7 @@
+use crate::playlist::Playlist;
 use rspotify::{
     blocking::client::Spotify,
-    model::{
-        album::SimplifiedAlbum, artist::FullArtist, playlist::SimplifiedPlaylist,
-        search::SearchResult, track::FullTrack,
-    },
+    model::{album::SimplifiedAlbum, artist::FullArtist, search::SearchResult, track::FullTrack},
     senum::SearchType,
 };
 
@@ -38,11 +36,11 @@ pub fn albums(client: &Spotify, query: &str, limit: u32) -> Result<Vec<Simplifie
     })
 }
 
-pub fn playlists(client: &Spotify, query: &str, limit: u32) -> Result<Vec<SimplifiedPlaylist>> {
+pub fn playlists(client: &Spotify, query: &str, limit: u32) -> Result<Vec<Playlist>> {
     let page = client.search(query, SearchType::Playlist, limit, 0, None, None)?;
 
     Ok(if let SearchResult::Playlists(p) = page {
-        p.items
+        p.items.into_iter().map(Playlist::from).collect()
     } else {
         vec![]
     })
