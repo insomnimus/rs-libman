@@ -97,7 +97,7 @@ pub fn split_command(s: &str) -> (&str, Option<&str>) {
     let first_space = first_space.unwrap();
     let arg = s
         .chars()
-        .skip(first_space)
+        .skip(first_space - 1)
         .enumerate()
         .find(|(_, c)| !c.is_whitespace())
         .map(|(i, _)| i + first_space)
