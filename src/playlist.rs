@@ -1,3 +1,4 @@
+use rspotify::blocking::client::Spotify;
 use rspotify::model::{
     playlist::{FullPlaylist, SimplifiedPlaylist},
     user::PublicUser,
@@ -68,5 +69,19 @@ impl Playlist {
                 p.name.push_str(name);
             }
         }
+    }
+
+    pub fn make_full(&mut self, client: &Spotify, user_id: &str) -> crate::SpotifyResult {
+        if let Self::Simple(p) = self {
+            let mut id = p.id.to_string();
+            *self = client
+                .user_playlist(user_id, Some(id.as_mut_str()), None, None)?
+                .into();
+        }
+        Ok(())
+    }
+
+    pub fn is_simple(&self) -> bool {
+        matches!(self, Self::Simple(_))
     }
 }

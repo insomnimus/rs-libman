@@ -5,12 +5,14 @@ use crate::{
     read_option, read_option_bool, search, split_command, SpotifyResult,
 };
 
+use chrono::Utc;
 use regex::Regex;
+
 use rspotify::{
     blocking::client::Spotify,
     model::{
         album::SimplifiedAlbum, artist::FullArtist, device::Device, offset::Offset,
-        track::FullTrack, PlayingItem,
+        playlist::PlaylistTrack, track::FullTrack, PlayingItem,
     },
     senum::{AdditionalType, RepeatState},
 };
@@ -229,22 +231,78 @@ impl Controller {
             Some(t) => t,
         };
 
-        let pl = match self.choose_user_playlist(arg)? {
+        let mut pl = match self.choose_user_playlist(arg)? {
             None => {
                 println!("cancelled");
                 return Ok(());
             }
             Some(p) => p,
         };
-        let id = if track.id.is_none() {
-            track.uri
-        } else {
-            track.id.unwrap()
+        let id = match track.id.as_ref() {
+            Some(i) => i.clone(),
+            None => track.uri.clone(),
         };
+        // do not add duplicate songs
+
+        let was_simple = pl.is_simple();
+        if was_simple {
+            pl.make_full(&self.client, &self.user)?;
+        }
+
+        let mut dupe = false;
+        let pl = if let Playlist::Full(mut p) = pl {
+            if !p.tracks.items.iter().any(|playlist_track| {
+                playlist_track
+                    .track
+                    .as_ref()
+                    .map(|t| t.id.eq(&track.id) || t.uri.eq(&track.uri))
+                    .unwrap_or(false)
+            }) {
+                // no dupes, add the track
+                p.tracks.items.insert(
+                    0,
+                    PlaylistTrack {
+                        added_at: Utc::now(),
+                        added_by: None,
+                        is_local: false,
+                        track: Some(track),
+                    },
+                );
+            } else {
+                println!("the track is already in the playlist, no action taken");
+                dupe = true;
+            }
+            Playlist::from(p)
+        } else {
+            pl
+        };
+
+        if dupe {
+            if was_simple {
+                if let Some(v) = self.pl_cache.as_mut() {
+                    for p in v {
+                        if p.id() == pl.id() {
+                            *p = pl;
+                            break;
+                        }
+                    }
+                }
+            }
+            return Ok(());
+        }
+
         self.client
             .user_playlist_add_tracks(&self.user, pl.id(), &[id], Some(0))
             .map(|_| {
                 println!("saved to {}", pl.name());
+                if let Some(v) = self.pl_cache.as_mut() {
+                    for p in v {
+                        if p.id() == pl.id() {
+                            *p = pl;
+                            break;
+                        }
+                    }
+                }
             })
     }
 

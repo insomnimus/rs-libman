@@ -1,3 +1,7 @@
 # libman
 
-Code under development. The readme will be updated once the app is ready to use.
+Rest of the readme coming soon.
+
+# Installation
+
+`cargo install --git https://github.com/insomnimus/libman --branch main`
