@@ -16,18 +16,31 @@ impl Handler {
     }
 
     pub fn show_help(&self) {
-        println!(
-            "# {name}
+        if self.aliases.is_empty() {
+            println!(
+                "# {name}
+usage:
+  {usage}
+
+{help}",
+                name = &self.name,
+                usage = &self.usage,
+                help = &self.help
+            );
+        } else {
+            println!(
+                "# {name}
 aliases: {aliases}
 usage:
   {usage}
 
 {help}",
-            name = &self.name,
-            aliases = self.aliases.join(", "),
-            usage = &self.usage,
-            help = &self.help
-        );
+                name = &self.name,
+                aliases = self.aliases.join(", "),
+                usage = &self.usage,
+                help = &self.help
+            );
+        }
     }
 
     pub fn show_usage(&self) {

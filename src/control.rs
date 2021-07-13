@@ -510,8 +510,16 @@ impl Controller {
         }
     }
 
-    fn show(&self, _arg: Option<&str>) -> SpotifyResult {
-        todo!()
+    fn show(&mut self, arg: Option<&str>) -> SpotifyResult {
+        if let Some(a) = arg {
+            match a {
+                "playing" | "track" => self.show_playing(),
+                "lib" | "pl" => self.show_user_playlists(),
+                _ => self.show_user_playlist(a),
+            }
+        } else {
+            self.show_playback()
+        }
     }
 
     fn play_user_playlist(&mut self, arg: Option<&str>) -> SpotifyResult {
@@ -679,5 +687,87 @@ impl Controller {
                 self.playing = true;
                 println!("playing {}", &pl.name);
             })
+    }
+}
+
+impl Controller {
+    fn show_playing(&mut self) -> SpotifyResult {
+        if let Some(playing) = self.client.current_playing(
+            None,
+            Some(vec![AdditionalType::Track, AdditionalType::Episode]),
+        )? {
+            self.playing = playing.is_playing;
+            match playing.item.as_ref() {
+                Some(PlayingItem::Track(t)) => {
+                    println!("{} by {}", &t.name, crate::join_artists(&t.artists));
+                    println!("playing = {}", &playing.is_playing);
+                }
+                Some(PlayingItem::Episode(e)) => {
+                    println!(
+                        "{} from {} by {}\n{}",
+                        &e.name, &e.show.name, &e.show.publisher, &e.description
+                    );
+                    println!("playing = {}", &playing.is_playing);
+                }
+                None => {
+                    println!("not playing anything");
+                }
+            };
+        } else {
+            println!("not playing anything");
+        }
+        Ok(())
+    }
+
+    fn show_playback(&mut self) -> SpotifyResult {
+        if let Some(playing) = self.client.current_playback(
+            None,
+            Some(vec![AdditionalType::Track, AdditionalType::Episode]),
+        )? {
+            self.playing = playing.is_playing;
+            println!("device  | {}", &playing.device.name);
+            println!("repeat  | {}", playing.repeat_state.as_str());
+            println!("shuffle | {}", playing.shuffle_state);
+            println!("playing | {}", playing.is_playing);
+            match &playing.item.as_ref() {
+                Some(PlayingItem::Track(t)) => {
+                    println!("{} by {}", &t.name, crate::join_artists(&t.artists));
+                }
+                Some(PlayingItem::Episode(e)) => {
+                    println!(
+                        "{} from {} by {}\n{}",
+                        &e.name, &e.show.name, &e.show.publisher, &e.description
+                    );
+                }
+                None => {}
+            };
+        } else {
+            println!("not playing anything");
+        }
+        Ok(())
+    }
+
+    fn show_user_playlist(&self, name: &str) -> SpotifyResult {
+        if let Some(_pl) = self.choose_user_playlist(Some(name))? {
+            todo!()
+        } else {
+            println!("could not find a playlist with the name {}", name);
+            Ok(())
+        }
+    }
+
+    fn show_user_playlists(&self) -> SpotifyResult {
+        self.get_playlists().map(|pls| {
+            let longest = pls.iter().map(|p| p.name.len()).max().unwrap_or_default();
+
+            for pl in &pls {
+                println!(
+                    "{name:width$} | {n_tracks} tracks",
+                    width = longest,
+                    name = &pl.name,
+                    n_tracks = pl.tracks.len()
+                );
+            }
+        })
     }
 }
