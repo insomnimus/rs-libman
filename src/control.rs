@@ -22,6 +22,7 @@ pub struct Controller {
     prompt: String,
     playing: bool,
     last_pl: Option<SimplifiedPlaylist>,
+    // TODO: implement this. pl_cache: Vec<FullPlaylist>,
 }
 
 impl Controller {
@@ -747,13 +748,9 @@ impl Controller {
         Ok(())
     }
 
-    fn show_user_playlist(&self, name: &str) -> SpotifyResult {
-        if let Some(_pl) = self.choose_user_playlist(Some(name))? {
-            todo!()
-        } else {
-            println!("could not find a playlist with the name {}", name);
-            Ok(())
-        }
+    fn show_user_playlist(&self, _name: &str) -> SpotifyResult {
+        println!("unimplemented");
+        Ok(())
     }
 
     fn show_user_playlists(&self) -> SpotifyResult {
