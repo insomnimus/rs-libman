@@ -39,7 +39,7 @@ impl Controller {
         }
     }
 
-    pub fn start(mut self) {
+    pub fn start(&mut self) {
         let re_vol = Regex::new(r"^\s*(\-|\+)\s*(\d+)\s*$").unwrap();
         loop {
             let input = prompt(&self.prompt);
@@ -116,7 +116,7 @@ impl Controller {
 
 // library commands
 impl Controller {
-    fn create_playlist(&self, arg: Option<&str>) -> SpotifyResult {
+    fn create_playlist(&mut self, arg: Option<&str>) -> SpotifyResult {
         let name = match arg.as_ref() {
             None => {
                 let s = read_input("playlist name");
@@ -138,8 +138,11 @@ impl Controller {
         if confirm {
             self.client
                 .user_playlist_create(&self.user, &name, public, description)
-                .map(|_| {
-                    println!("created new playlist {}", &name);
+                .map(|pl| {
+                    println!("created new playlist {}", &pl.name);
+                    if let Some(v) = self.pl_cache.as_mut() {
+                        v.insert(0, pl.into());
+                    }
                 })
         } else {
             println!("aborted");
@@ -170,6 +173,17 @@ impl Controller {
                 .user_playlist_change_detail(&self.user, pl.id(), name, public, description, None)
                 .map(|_| {
                     println!("edited {}", pl.name());
+                    if let Some(n) = name {
+                        if !n.eq(pl.name()) {
+                            if let Some(v) = self.pl_cache.as_mut() {
+                                for p in v.iter_mut() {
+                                    if p.id() == pl.id() {
+                                        p.set_name(n);
+                                    }
+                                }
+                            }
+                        }
+                    }
                 })
         } else {
             println!("cancelled");
@@ -194,6 +208,9 @@ impl Controller {
                         if s.id().eq(pl.id()) {
                             self.last_pl = None;
                         }
+                    }
+                    if let Some(v) = self.pl_cache.as_mut() {
+                        v.retain(|p| p.id() != pl.id());
                     }
                     println!("deleted {}", pl.name());
                 })
@@ -690,7 +707,6 @@ impl Controller {
     }
 
     fn play_playlist(&mut self, pl: &Playlist) -> SpotifyResult {
-        // TODO: fetch all the tracks here
         self.client
             .start_playback(
                 None,

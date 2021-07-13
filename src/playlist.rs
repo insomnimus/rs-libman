@@ -56,4 +56,17 @@ impl Playlist {
             Self::Full(p) => &p.owner,
         }
     }
+
+    pub fn set_name(&mut self, name: &str) {
+        match self {
+            Self::Simple(p) => {
+                p.name.clear();
+                p.name.push_str(name);
+            }
+            Self::Full(p) => {
+                p.name.clear();
+                p.name.push_str(name);
+            }
+        }
+    }
 }
