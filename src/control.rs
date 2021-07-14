@@ -958,15 +958,62 @@ impl Controller {
         }
     }
 
-    fn follow_artist(&self, _art: &FullArtist) -> SpotifyResult {
-        todo!()
+    fn follow_artist(&self, art: &FullArtist) -> SpotifyResult {
+        let id = art.id.clone();
+
+        if let Ok(Some(true)) = self
+            .client
+            .user_artist_check_follow(&[id.clone()])
+            .map(|v| v.get(0).copied())
+        {
+            println!("already following {}", &art.name);
+            Ok(())
+        } else {
+            self.client.user_follow_artists(&[id]).map(|_| {
+                println!("followed {}", &art.name);
+            })
+        }
     }
 
-    fn save_album(&self, _alb: &SimplifiedAlbum) -> SpotifyResult {
-        todo!()
+    fn save_album(&self, alb: &SimplifiedAlbum) -> SpotifyResult {
+        let id = match alb.id.as_ref() {
+            Some(i) => i.clone(),
+            None => {
+                println!("the album is missing an ID, can't save to the library");
+                return Ok(());
+            }
+        };
+
+        if let Ok(Some(true)) = self
+            .client
+            .current_user_saved_albums_contains(&[id.clone()])
+            .map(|v| v.get(0).copied())
+        {
+            println!("{} is already in your library", &alb.name);
+            Ok(())
+        } else {
+            self.client.current_user_saved_albums_add(&[id]).map(|_| {
+                println!("saved {} to your library", &alb.name);
+            })
+        }
     }
 
-    fn follow_playlist(&self, _pl: &Playlist) -> SpotifyResult {
-        todo!()
+    fn follow_playlist(&self, pl: &Playlist) -> SpotifyResult {
+        let owner_id = &pl.owner().id;
+        let pl_id = pl.id();
+        if let Ok(Some(true)) = self
+            .client
+            .user_playlist_check_follow(owner_id, pl_id, &[self.user.clone()])
+            .map(|v| v.get(0).copied())
+        {
+            println!("already following {}", pl.name());
+            Ok(())
+        } else {
+            self.client
+                .user_playlist_follow_playlist(owner_id, pl_id, None)
+                .map(|_| {
+                    println!("followed {}", pl.name());
+                })
+        }
     }
 }

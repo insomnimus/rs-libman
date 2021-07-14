@@ -362,14 +362,6 @@ pub fn default_artist_handlers() -> Vec<Handler<ArtistCmd>> {
             "Follow an artist.",
         ),
         new(
-            Queue,
-            "queue",
-            "Add an artist to your playing queue.",
-            "queue <N>",
-            &["q", "que"],
-            "Add an artist to your playing Queue.",
-        ),
-        new(
             Help,
             "help",
             "Show help about a topic.",
@@ -406,7 +398,7 @@ pub fn default_album_handlers() -> Vec<Handler<AlbumCmd>> {
             "Add an album to your playing queue.",
             "queue <N>",
             &["q", "que"],
-            "Add an album to your playing Queue.",
+            "Add an albums tracks to your playing Queue.",
         ),
         new(
             Help,
@@ -438,14 +430,6 @@ pub fn default_playlist_handlers() -> Vec<Handler<PlaylistCmd>> {
             "follow <N>",
             &["f"],
             "Follow a playlist.",
-        ),
-        new(
-            Queue,
-            "queue",
-            "Add a playlist to your playing queue.",
-            "queue <N>",
-            &["q", "que"],
-            "Add a playlist to your playing Queue.",
         ),
         new(
             Help,

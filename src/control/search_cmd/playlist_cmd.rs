@@ -30,37 +30,6 @@ impl Controller {
         self.play_playlist(&pls[n]).map(|_| true)
     }
 
-    pub fn playlist_cmd_queue(
-        &self,
-        pls: &[Playlist],
-        arg: Option<&str>,
-    ) -> Result<bool, failure::Error> {
-        let arg = match arg {
-            Some(a) => a,
-            None => {
-                self.show_playlist_usage(PlaylistCmd::Queue);
-                return Ok(false);
-            }
-        };
-
-        let n = match arg.parse::<usize>() {
-            Ok(n) if n >= pls.len() => {
-                println!("please enter a number between 0 and {}", pls.len());
-                return Ok(false);
-            }
-            Ok(n) => n,
-            Err(_) => {
-                self.show_playlist_usage(PlaylistCmd::Queue);
-                return Ok(false);
-            }
-        };
-
-        self.queue(pls[n].uri().to_string()).map(|_| {
-            println!("added {} to the queue", &pls[n].name());
-            true
-        })
-    }
-
     pub fn playlist_cmd_follow(
         &self,
         pls: &[Playlist],

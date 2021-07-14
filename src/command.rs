@@ -55,7 +55,6 @@ pub enum AlbumCmd {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ArtistCmd {
     Play,
-    Queue,
     Follow,
     Help,
 }
@@ -63,7 +62,6 @@ pub enum ArtistCmd {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum PlaylistCmd {
     Play,
-    Queue,
     Follow,
     Help,
 }

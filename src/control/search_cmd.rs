@@ -273,7 +273,6 @@ impl Controller {
                         self.artist_cmd_help(arg);
                         false
                     }
-                    ArtistCmd::Queue => self.artist_cmd_queue(&artists, arg)?,
                     ArtistCmd::Follow => self.artist_cmd_follow(&artists, arg)?,
                 };
 
@@ -382,7 +381,6 @@ impl Controller {
                         self.playlist_cmd_help(arg);
                         false
                     }
-                    PlaylistCmd::Queue => self.playlist_cmd_queue(&pls, arg)?,
                     PlaylistCmd::Follow => self.playlist_cmd_follow(&pls, arg)?,
                 };
 

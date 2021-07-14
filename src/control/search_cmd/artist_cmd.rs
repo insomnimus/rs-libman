@@ -31,37 +31,6 @@ impl Controller {
         self.play_artist(&artists[n]).map(|_| true)
     }
 
-    pub fn artist_cmd_queue(
-        &self,
-        artists: &[FullArtist],
-        arg: Option<&str>,
-    ) -> Result<bool, failure::Error> {
-        let arg = match arg {
-            Some(a) => a,
-            None => {
-                self.show_artist_usage(ArtistCmd::Queue);
-                return Ok(false);
-            }
-        };
-
-        let n = match arg.parse::<usize>() {
-            Ok(n) if n >= artists.len() => {
-                println!("please enter a number between 0 and {}", artists.len());
-                return Ok(false);
-            }
-            Ok(n) => n,
-            Err(_) => {
-                self.show_artist_usage(ArtistCmd::Queue);
-                return Ok(false);
-            }
-        };
-
-        self.queue(artists[n].uri.clone()).map(|_| {
-            println!("added {} to the queue", &artists[n].name);
-            true
-        })
-    }
-
     pub fn artist_cmd_follow(
         &self,
         artists: &[FullArtist],
