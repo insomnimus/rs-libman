@@ -238,12 +238,13 @@ impl Controller {
             }
             Some(p) => p,
         };
+
         let id = match track.id.as_ref() {
             Some(i) => i.clone(),
             None => track.uri.clone(),
         };
-        // do not add duplicate songs
 
+        // do not add duplicate songs
         let was_simple = pl.is_simple();
         if was_simple {
             pl.make_full(&self.client, &self.user)?;
@@ -278,7 +279,7 @@ impl Controller {
         };
 
         if dupe {
-            if was_simple {
+            if was_simple && !pl.is_simple() {
                 if let Some(v) = self.pl_cache.as_mut() {
                     for p in v {
                         if p.id() == pl.id() {
@@ -315,22 +316,73 @@ impl Controller {
             }
         };
 
-        let pl = match self.choose_user_playlist(arg)? {
+        let mut pl = match self.choose_user_playlist(arg)? {
             Some(p) => p,
             None => {
                 println!("cancelled");
                 return Ok(());
             }
         };
-        let id = if track.id.is_none() {
-            track.uri
-        } else {
-            track.id.unwrap()
+
+        let id = match track.id.as_ref() {
+            Some(i) => i.clone(),
+            None => track.uri.clone(),
         };
+        let was_simple = pl.is_simple();
+        if was_simple {
+            pl.make_full(&self.client, &self.user)?;
+        }
+
+        let mut contains = false;
+        let pl = match pl {
+            Playlist::Full(mut p) => {
+                // remove track from playlist, if it's there
+                p.tracks.items.retain(|pl_track| {
+                    if pl_track
+                        .track
+                        .as_ref()
+                        .map(|t| t.id.eq(&track.id) || t.uri.eq(&track.uri))
+                        .unwrap_or(false)
+                    {
+                        // playlist contains the track
+                        contains = true;
+                        false
+                    } else {
+                        true
+                    }
+                });
+                Playlist::from(p)
+            }
+            Playlist::Simple(_) => pl,
+        };
+
+        if !contains {
+            if was_simple && !pl.is_simple() {
+                // replace the playlist with the full one
+                if let Some(v) = self.pl_cache.as_mut() {
+                    for p in v.iter_mut() {
+                        if p.id() == pl.id() {
+                            *p = pl;
+                            break;
+                        }
+                    }
+                }
+            }
+            println!("the playlist does not have the track, no action taken");
+            return Ok(());
+        }
         self.client
             .user_playlist_remove_all_occurrences_of_tracks(&self.user, pl.id(), &[id], None)
             .map(|_| {
                 println!("removed from {}", pl.name());
+                if let Some(v) = self.pl_cache.as_mut() {
+                    for p in v.iter_mut() {
+                        if p.id() == pl.id() {
+                            *p = pl;
+                            break;
+                        }
+                    }
+                }
             })
     }
 }
