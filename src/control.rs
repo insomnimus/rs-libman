@@ -1,8 +1,8 @@
 pub mod search_cmd;
 
 use crate::{
-    command::{Cmd, TrackCmd},
-    handler::Handler,
+    command::{AlbumCmd, ArtistCmd, Cmd, PlaylistCmd, TrackCmd},
+    handler::{self, Handler},
     playlist::Playlist,
     prompt, read_bool, read_input, read_number, read_option, read_option_bool, search,
     split_command, SpotifyResult,
@@ -26,6 +26,9 @@ pub struct Controller {
     user: String,
     handlers: Vec<Handler<Cmd>>,
     track_handlers: Vec<Handler<TrackCmd>>,
+    artist_handlers: Vec<Handler<ArtistCmd>>,
+    album_handlers: Vec<Handler<AlbumCmd>>,
+    playlist_handlers: Vec<Handler<PlaylistCmd>>,
     prompt: String,
     playing: bool,
     last_pl: Option<Playlist>,
@@ -38,7 +41,6 @@ impl Controller {
         client: Spotify,
         user_id: String,
         handlers: Vec<Handler<Cmd>>,
-        track_handlers: Vec<Handler<TrackCmd>>,
         prompt: String,
     ) -> Self {
         Self {
@@ -46,7 +48,10 @@ impl Controller {
             prompt,
             user: user_id,
             handlers,
-            track_handlers,
+            track_handlers: handler::default_track_handlers(),
+            artist_handlers: handler::default_artist_handlers(),
+            album_handlers: handler::default_album_handlers(),
+            playlist_handlers: handler::default_playlist_handlers(),
             playing: false,
             last_pl: None,
             pl_cache: None,
@@ -951,5 +956,17 @@ impl Controller {
                 println!("added {} to your favourites folder", &t.name);
             })
         }
+    }
+
+    fn follow_artist(&self, _art: &FullArtist) -> SpotifyResult {
+        todo!()
+    }
+
+    fn save_album(&self, _alb: &SimplifiedAlbum) -> SpotifyResult {
+        todo!()
+    }
+
+    fn follow_playlist(&self, _pl: &Playlist) -> SpotifyResult {
+        todo!()
     }
 }

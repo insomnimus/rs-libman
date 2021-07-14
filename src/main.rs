@@ -63,7 +63,6 @@ fn main() {
         client,
         user.id,
         handler::default_handlers(),
-        handler::default_track_handlers(),
         "@libman>".to_string(),
     );
 

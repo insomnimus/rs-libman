@@ -43,3 +43,27 @@ pub enum TrackCmd {
     Like,
     Help,
 }
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum AlbumCmd {
+    Play,
+    Queue,
+    Save,
+    Help,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ArtistCmd {
+    Play,
+    Queue,
+    Follow,
+    Help,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum PlaylistCmd {
+    Play,
+    Queue,
+    Follow,
+    Help,
+}

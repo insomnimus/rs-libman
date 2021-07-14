@@ -1,4 +1,4 @@
-use crate::command::{Cmd, TrackCmd};
+use crate::command::{AlbumCmd, ArtistCmd, Cmd, PlaylistCmd, TrackCmd};
 use std::borrow::Cow;
 
 pub struct Handler<T> {
@@ -339,4 +339,121 @@ pub fn default_track_handlers() -> Vec<Handler<TrackCmd>> {
 	"Show available actions.",
 	),
 	]
+}
+
+pub fn default_artist_handlers() -> Vec<Handler<ArtistCmd>> {
+    use ArtistCmd::*;
+    let new = Handler::new;
+    vec![
+        new(
+            Play,
+            "play",
+            "Play an artist.",
+            "play <N>",
+            &["pl"],
+            "Play an artist.\nYou can also just enter the items number.",
+        ),
+        new(
+            Follow,
+            "follow",
+            "Follow an artist.",
+            "follow <N>",
+            &["f"],
+            "Follow an artist.",
+        ),
+        new(
+            Queue,
+            "queue",
+            "Add an artist to your playing queue.",
+            "queue <N>",
+            &["q", "que"],
+            "Add an artist to your playing Queue.",
+        ),
+        new(
+            Help,
+            "help",
+            "Show help about a topic.",
+            "help [topic]",
+            &[],
+            "Show help about a topic or list available commands.",
+        ),
+    ]
+}
+
+pub fn default_album_handlers() -> Vec<Handler<AlbumCmd>> {
+    use AlbumCmd::*;
+    let new = Handler::new;
+    vec![
+        new(
+            Play,
+            "play",
+            "Play an album.",
+            "play <N>",
+            &["pl"],
+            "Play an album.\nYou can also just enter the items number.",
+        ),
+        new(
+            Save,
+            "save",
+            "Save an album to your library.",
+            "save <N>",
+            &["fave", "fav"],
+            "Save an album to your library.",
+        ),
+        new(
+            Queue,
+            "queue",
+            "Add an album to your playing queue.",
+            "queue <N>",
+            &["q", "que"],
+            "Add an album to your playing Queue.",
+        ),
+        new(
+            Help,
+            "help",
+            "Show help about a topic.",
+            "help [topic]",
+            &[],
+            "Show help about a topic or list available commands.",
+        ),
+    ]
+}
+
+pub fn default_playlist_handlers() -> Vec<Handler<PlaylistCmd>> {
+    use PlaylistCmd::*;
+    let new = Handler::new;
+    vec![
+        new(
+            Play,
+            "play",
+            "Play a playlist.",
+            "play <N>",
+            &["pl"],
+            "Play a playlist.\nYou can also just enter the items number.",
+        ),
+        new(
+            Follow,
+            "follow",
+            "Follow a playlist.",
+            "follow <N>",
+            &["f"],
+            "Follow a playlist.",
+        ),
+        new(
+            Queue,
+            "queue",
+            "Add a playlist to your playing queue.",
+            "queue <N>",
+            &["q", "que"],
+            "Add a playlist to your playing Queue.",
+        ),
+        new(
+            Help,
+            "help",
+            "Show help about a topic.",
+            "help [topic]",
+            &[],
+            "Show help about a topic or list available commands.",
+        ),
+    ]
 }
