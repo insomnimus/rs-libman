@@ -30,6 +30,7 @@ pub struct Controller {
     playing: bool,
     last_pl: Option<Playlist>,
     pl_cache: Option<Vec<Playlist>>,
+    device: Option<String>,
 }
 
 impl Controller {
@@ -49,6 +50,7 @@ impl Controller {
             playing: false,
             last_pl: None,
             pl_cache: None,
+            device: None,
         }
     }
 
@@ -431,7 +433,7 @@ impl Controller {
 
         let n = if n > 100 { 100_u8 } else { n };
 
-        self.client.volume(n, None)
+        self.client.volume(n, self.device.clone())
     }
 
     fn change_volume(&self, mut n: i32) -> SpotifyResult {
@@ -487,12 +489,15 @@ impl Controller {
                     println!("shuffle = {}", cont.shuffle_state);
                     Ok(())
                 }
-                _ => self.client.shuffle(!cont.shuffle_state, None).map(|_| {
-                    println!("shuffle = {}", !cont.shuffle_state);
-                }),
+                _ => self
+                    .client
+                    .shuffle(!cont.shuffle_state, self.device.clone())
+                    .map(|_| {
+                        println!("shuffle = {}", !cont.shuffle_state);
+                    }),
             }
         } else if let Some(b) = sh {
-            self.client.shuffle(b, None).map(|_| {
+            self.client.shuffle(b, self.device.clone()).map(|_| {
                 println!("shuffle = {}", b);
             })
         } else {
@@ -518,7 +523,7 @@ impl Controller {
             }
         };
 
-        self.client.repeat(rep, None).map(|_| {
+        self.client.repeat(rep, self.device.clone()).map(|_| {
             println!("repeat = {}", rep.as_str());
         })
     }
@@ -526,9 +531,10 @@ impl Controller {
     fn toggle(&mut self) -> SpotifyResult {
         self.playing = !self.playing;
         if self.playing {
-            self.client.start_playback(None, None, None, None, None)
+            self.client
+                .start_playback(self.device.clone(), None, None, None, None)
         } else {
-            self.client.pause_playback(None)
+            self.client.pause_playback(self.device.clone())
         }
     }
 
@@ -577,10 +583,11 @@ impl Controller {
         Ok(())
     }
 
-    fn set_device(&self, arg: Option<&str>) -> SpotifyResult {
+    fn set_device(&mut self, arg: Option<&str>) -> SpotifyResult {
         if let Some(dev) = self.choose_device(arg)? {
             self.client.transfer_playback(&dev.id, false).map(|_| {
                 println!("playing on {}", &dev.name);
+                self.device = Some(dev.id);
             })
         } else {
             println!("cancelled");
@@ -603,7 +610,13 @@ impl Controller {
     fn play_user_playlist(&mut self, arg: Option<&str>) -> SpotifyResult {
         if let Some(pl) = self.choose_user_playlist(arg)? {
             self.client
-                .start_playback(None, Some(pl.uri().to_string()), None, None, None)
+                .start_playback(
+                    self.device.clone(),
+                    Some(pl.uri().to_string()),
+                    None,
+                    None,
+                    None,
+                )
                 .map(|_| {
                     println!("playing {}", pl.name());
                     self.playing = true;
@@ -685,7 +698,13 @@ impl Controller {
 impl Controller {
     fn play_track(&mut self, track: &FullTrack) -> SpotifyResult {
         self.client
-            .start_playback(None, None, Some(vec![track.uri.clone()]), None, None)
+            .start_playback(
+                self.device.clone(),
+                None,
+                Some(vec![track.uri.clone()]),
+                None,
+                None,
+            )
             .map(|_| {
                 self.playing = true;
                 println!(
@@ -700,7 +719,7 @@ impl Controller {
     fn play_album(&mut self, alb: &SimplifiedAlbum) -> SpotifyResult {
         if let Some(uri) = alb.uri.as_ref() {
             self.client.start_playback(
-                None,
+                self.device.clone(),
                 Some(uri.clone()),
                 None,
                 Some(Offset {
@@ -711,7 +730,7 @@ impl Controller {
             )
         } else if let Some(id) = alb.id.as_ref() {
             self.client.start_playback(
-                None,
+                self.device.clone(),
                 Some(id.clone()),
                 None,
                 Some(Offset {
@@ -737,7 +756,7 @@ impl Controller {
 
     fn play_artist(&mut self, art: &FullArtist) -> SpotifyResult {
         self.client
-            .start_playback(None, Some(art.uri.clone()), None, None, None)
+            .start_playback(self.device.clone(), Some(art.uri.clone()), None, None, None)
             .map(|_| {
                 self.playing = true;
                 println!("playing {}", &art.name);
@@ -747,7 +766,7 @@ impl Controller {
     fn play_playlist(&mut self, pl: &Playlist) -> SpotifyResult {
         self.client
             .start_playback(
-                None,
+                self.device.clone(),
                 Some(pl.uri().to_string()),
                 None,
                 Some(Offset {
@@ -911,10 +930,8 @@ impl Controller {
             })
     }
 
-    fn queue_track(&self, t: &FullTrack) -> SpotifyResult {
-        self.client.add_item_to_queue(t.uri.clone(), None).map(|_| {
-            println!("added {} to the queue", &t.name);
-        })
+    fn queue(&self, uri: String) -> SpotifyResult {
+        self.client.add_item_to_queue(uri, self.device.clone())
     }
 
     fn like_track(&self, t: &FullTrack) -> SpotifyResult {

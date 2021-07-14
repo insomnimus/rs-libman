@@ -55,7 +55,10 @@ impl Controller {
             }
         };
 
-        self.queue_track(&tracks[n]).map(|_| true)
+        self.queue(tracks[n].uri.clone()).map(|_| {
+            println!("added {} to the queue", &tracks[n].name);
+            true
+        })
     }
 
     pub fn track_cmd_like(
