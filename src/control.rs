@@ -912,11 +912,7 @@ impl Controller {
     }
 
     fn queue_track(&self, t: &FullTrack) -> SpotifyResult {
-        let id = match t.id.as_ref() {
-            Some(i) => i.clone(),
-            None => t.uri.clone(),
-        };
-        self.client.add_item_to_queue(id, None).map(|_| {
+        self.client.add_item_to_queue(t.uri.clone(), None).map(|_| {
             println!("added {} to the queue", &t.name);
         })
     }
