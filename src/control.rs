@@ -1,8 +1,11 @@
 pub mod search_cmd;
 
 use crate::{
-    command::Cmd, handler::Handler, playlist::Playlist, prompt, read_bool, read_input, read_number,
-    read_option, read_option_bool, search, split_command, SpotifyResult,
+    command::{Cmd, TrackCmd},
+    handler::Handler,
+    playlist::Playlist,
+    prompt, read_bool, read_input, read_number, read_option, read_option_bool, search,
+    split_command, SpotifyResult,
 };
 
 use chrono::Utc;
@@ -21,7 +24,8 @@ use std::{convert::TryFrom, mem};
 pub struct Controller {
     client: Spotify,
     user: String,
-    handlers: Vec<Handler>,
+    handlers: Vec<Handler<Cmd>>,
+    track_handlers: Vec<Handler<TrackCmd>>,
     prompt: String,
     playing: bool,
     last_pl: Option<Playlist>,
@@ -29,12 +33,19 @@ pub struct Controller {
 }
 
 impl Controller {
-    pub fn new(client: Spotify, user_id: String, handlers: Vec<Handler>, prompt: String) -> Self {
+    pub fn new(
+        client: Spotify,
+        user_id: String,
+        handlers: Vec<Handler<Cmd>>,
+        track_handlers: Vec<Handler<TrackCmd>>,
+        prompt: String,
+    ) -> Self {
         Self {
             client,
             prompt,
             user: user_id,
             handlers,
+            track_handlers,
             playing: false,
             last_pl: None,
             pl_cache: None,
@@ -230,80 +241,7 @@ impl Controller {
             Some(t) => t,
         };
 
-        let mut pl = match self.choose_user_playlist(arg)? {
-            None => {
-                println!("cancelled");
-                return Ok(());
-            }
-            Some(p) => p,
-        };
-
-        let id = match track.id.as_ref() {
-            Some(i) => i.clone(),
-            None => track.uri.clone(),
-        };
-
-        // do not add duplicate songs
-        let was_simple = pl.is_simple();
-        if was_simple {
-            pl.make_full(&self.client, &self.user)?;
-        }
-
-        let mut dupe = false;
-        let pl = if let Playlist::Full(mut p) = pl {
-            if !p.tracks.items.iter().any(|playlist_track| {
-                playlist_track
-                    .track
-                    .as_ref()
-                    .map(|t| t.id.eq(&track.id) || t.uri.eq(&track.uri))
-                    .unwrap_or(false)
-            }) {
-                // no dupes, add the track
-                p.tracks.items.insert(
-                    0,
-                    PlaylistTrack {
-                        added_at: Utc::now(),
-                        added_by: None,
-                        is_local: false,
-                        track: Some(track),
-                    },
-                );
-            } else {
-                println!("the track is already in the playlist, no action taken");
-                dupe = true;
-            }
-            Playlist::from(p)
-        } else {
-            pl
-        };
-
-        if dupe {
-            if was_simple && !pl.is_simple() {
-                if let Some(v) = self.pl_cache.as_mut() {
-                    for p in v {
-                        if p.id() == pl.id() {
-                            *p = pl;
-                            break;
-                        }
-                    }
-                }
-            }
-            return Ok(());
-        }
-
-        self.client
-            .user_playlist_add_tracks(&self.user, pl.id(), &[id], Some(0))
-            .map(|_| {
-                println!("saved to {}", pl.name());
-                if let Some(v) = self.pl_cache.as_mut() {
-                    for p in v {
-                        if p.id() == pl.id() {
-                            *p = pl;
-                            break;
-                        }
-                    }
-                }
-            })
+        self.save_track(track, arg)
     }
 
     fn remove_playing(&mut self, arg: Option<&str>) -> SpotifyResult {
@@ -615,7 +553,7 @@ impl Controller {
                 h.show_help();
             } else {
                 println!(
-                    "{} did not match any command or alias\nrun `help` for a list of the commands",
+                    "{} is not a known command or alias\nrun `help` for a list of the commands",
                     a
                 );
             }
@@ -893,5 +831,91 @@ impl Controller {
                 println!("{}", pl.name());
             }
         })
+    }
+}
+
+impl Controller {
+    fn save_track(&mut self, track: FullTrack, arg: Option<&str>) -> SpotifyResult {
+        let mut pl = match self.choose_user_playlist(arg)? {
+            None => {
+                println!("cancelled");
+                return Ok(());
+            }
+            Some(p) => p,
+        };
+
+        let id = match track.id.as_ref() {
+            Some(i) => i.clone(),
+            None => track.uri.clone(),
+        };
+
+        // do not add duplicate songs
+        let was_simple = pl.is_simple();
+        if was_simple {
+            pl.make_full(&self.client, &self.user)?;
+        }
+
+        let mut dupe = false;
+        let pl = if let Playlist::Full(mut p) = pl {
+            if !p.tracks.items.iter().any(|playlist_track| {
+                playlist_track
+                    .track
+                    .as_ref()
+                    .map(|t| t.id.eq(&track.id) || t.uri.eq(&track.uri))
+                    .unwrap_or(false)
+            }) {
+                // no dupes, add the track
+                p.tracks.items.insert(
+                    0,
+                    PlaylistTrack {
+                        added_at: Utc::now(),
+                        added_by: None,
+                        is_local: false,
+                        track: Some(track),
+                    },
+                );
+            } else {
+                println!("the track is already in the playlist, no action taken");
+                dupe = true;
+            }
+            Playlist::from(p)
+        } else {
+            pl
+        };
+        if dupe {
+            if was_simple && !pl.is_simple() {
+                if let Some(v) = self.pl_cache.as_mut() {
+                    for p in v {
+                        if p.id() == pl.id() {
+                            *p = pl;
+                            break;
+                        }
+                    }
+                }
+            }
+            return Ok(());
+        }
+
+        self.client
+            .user_playlist_add_tracks(&self.user, pl.id(), &[id], Some(0))
+            .map(|_| {
+                println!("saved to {}", pl.name());
+                if let Some(v) = self.pl_cache.as_mut() {
+                    for p in v {
+                        if p.id() == pl.id() {
+                            *p = pl;
+                            break;
+                        }
+                    }
+                }
+            })
+    }
+
+    fn queue_track(&self, _t: &FullTrack) -> SpotifyResult {
+        todo!()
+    }
+
+    fn like_track(&self, _t: &FullTrack) -> SpotifyResult {
+        todo!()
     }
 }

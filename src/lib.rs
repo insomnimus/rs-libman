@@ -157,3 +157,7 @@ pub fn equalfold(a: &str, b: &str) -> bool {
         true
     }
 }
+
+pub fn is_digits(s: &str) -> bool {
+    s.chars().all(|c| c.is_digit(10))
+}

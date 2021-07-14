@@ -1,5 +1,11 @@
-use super::Controller;
-use crate::{command::Cmd, playlist::Playlist, read_number, search, SpotifyResult};
+mod track_cmd;
+
+pub use super::Controller;
+use crate::{
+    command::{Cmd, TrackCmd},
+    playlist::Playlist,
+    read_number, search, SpotifyResult,
+};
 use rspotify::model::{album::SimplifiedAlbum, artist::FullArtist, track::FullTrack};
 
 enum SearchResult {
@@ -73,21 +79,7 @@ impl Controller {
             return Ok(());
         }
 
-        for (i, t) in tracks.iter().enumerate() {
-            println!(
-                "#{no:2} | {name} by {artist}",
-                no = i,
-                name = &t.name,
-                artist = crate::join_artists(&t.artists)
-            );
-        }
-
-        if let Some(n) = read_number(0, tracks.len()) {
-            self.play_track(&tracks[n])
-        } else {
-            println!("cancelled");
-            Ok(())
-        }
+        self.track_shell(tracks)
     }
 
     pub fn search_artist(&mut self, arg: Option<&str>) -> SpotifyResult {
@@ -228,6 +220,59 @@ impl Controller {
         } else {
             println!("cancelled");
             Ok(())
+        }
+    }
+
+    pub fn track_shell(&mut self, tracks: Vec<FullTrack>) -> SpotifyResult {
+        // show the tracks
+        for (i, t) in tracks.iter().enumerate() {
+            println!(
+                "#{no:2} | {name} by {artist}",
+                no = i,
+                name = &t.name,
+                artist = crate::join_artists(&t.artists)
+            );
+        }
+
+        println!("type help for a list of available actions");
+        loop {
+            let input = crate::prompt("command:");
+            if input.is_empty() {
+                println!("cancelled");
+                return Ok(());
+            }
+            let (cmd, arg) = crate::split_command(&input);
+            if arg.is_none() && crate::is_digits(cmd) {
+                let n = cmd.parse::<usize>().unwrap();
+                if n < tracks.len() {
+                    return self.play_track(&tracks[n]);
+                } else {
+                    println!("please enter a number between 0 and {}", tracks.len());
+                }
+            } else {
+                let c = match self.track_handlers.iter().find(|h| h.is_match(cmd)) {
+                    Some(h) => h.cmd,
+                    None => {
+                        println!("{} is not a known command\ntype `help` for a list of available actions", cmd);
+                        continue;
+                    }
+                };
+
+                let should_return = match c {
+                    TrackCmd::Play => self.track_cmd_play(&tracks, arg)?,
+                    TrackCmd::Help => {
+                        self.track_cmd_help(arg);
+                        false
+                    }
+                    TrackCmd::Queue => self.track_cmd_queue(&tracks, arg)?,
+                    TrackCmd::Save => self.track_cmd_save(&tracks, arg)?,
+                    TrackCmd::Like => self.track_cmd_like(&tracks, arg)?,
+                };
+
+                if should_return {
+                    return Ok(());
+                }
+            }
         }
     }
 }

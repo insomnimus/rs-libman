@@ -34,3 +34,12 @@ pub enum Cmd {
     Show,
     Prompt,
 }
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum TrackCmd {
+    Play,
+    Queue,
+    Save,
+    Like,
+    Help,
+}

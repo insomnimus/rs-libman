@@ -1,16 +1,16 @@
-use crate::command::Cmd;
+use crate::command::{Cmd, TrackCmd};
 use std::borrow::Cow;
 
-pub struct Handler {
+pub struct Handler<T> {
     pub name: Cow<'static, str>,
-    pub cmd: Cmd,
+    pub cmd: T,
     pub description: Cow<'static, str>,
     pub help: Cow<'static, str>,
     pub usage: Cow<'static, str>,
     pub aliases: Vec<Cow<'static, str>>,
 }
 
-impl Handler {
+impl<T> Handler<T> {
     pub fn is_match(&self, s: &str) -> bool {
         crate::equalfold(&self.name, s) || self.aliases.iter().any(|a| crate::equalfold(a, s))
     }
@@ -61,16 +61,15 @@ usage:
     }
 }
 
-pub fn default_handlers() -> Vec<Handler> {
-    use Cmd::*;
-    fn new(
-        cmd: Cmd,
+impl<T> Handler<T> {
+    pub fn new(
+        cmd: T,
         name: &'static str,
         description: &'static str,
         usage: &'static str,
         aliases: &[&'static str],
         help: &'static str,
-    ) -> Handler {
+    ) -> Handler<T> {
         Handler {
             name: name.into(),
             description: description.into(),
@@ -83,6 +82,11 @@ pub fn default_handlers() -> Vec<Handler> {
             cmd,
         }
     }
+}
+
+pub fn default_handlers() -> Vec<Handler<Cmd>> {
+    use Cmd::*;
+    let new = Handler::new;
 
     vec![
 	// search commands
@@ -285,6 +289,54 @@ pub fn default_handlers() -> Vec<Handler> {
 	"prompt <prompt>",
 	&[],
 	"Change the libman prompt. A space character will be automatically appended.",
+	),
+	]
+}
+
+pub fn default_track_handlers() -> Vec<Handler<TrackCmd>> {
+    use TrackCmd::*;
+    let new = Handler::new;
+
+    vec![
+	new(
+	Play,
+	"play",
+	"Play a track.",
+	"play <N>",
+	&["pl"],
+	"Play a track.\nYou can also just type the track number.",
+	),
+	new(
+	Queue,
+	"queue",
+	"Add a track to your playing queue.",
+	"queue <N>",
+	&["q", "que"],
+	"Add a track to your playing queue.",
+	),
+	new(
+	Save,
+	"save",
+	"Save a track to a playlist.",
+	"save <N> [playlist]",
+	&["add"],
+	"Save a track to one of your playlists.\nYou can omit the playlist name to choose interactively.",
+	),
+	new(
+	Like,
+	"like",
+	"Save a track to your 'liked songs'.",
+	"like <N>",
+	&["fav", "fave"],
+	"Save a track to your 'liked songs'.",
+	),
+	new(
+	Help,
+	"help",
+	"Show available actions.",
+	"help [topic]",
+	&[],
+	"Show available actions.",
 	),
 	]
 }
