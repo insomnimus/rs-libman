@@ -48,8 +48,6 @@ impl Controller {
 
             if let Err(e) = if input.is_empty() {
                 self.toggle()
-            } else if input.starts_with("prompt") {
-                self.set_prompt(input.strip_prefix("prompt").unwrap_or(""))
             } else if let Some(cap) = re_vol.captures(&input) {
                 let op = cap.get(1).unwrap().as_str();
                 let n = cap.get(2).unwrap().as_str().parse::<i32>().unwrap();
@@ -106,6 +104,7 @@ impl Controller {
             PlayUserPlaylist => self.play_user_playlist(args),
             Show => self.show(args),
             SetDevice => self.set_device(args),
+            Prompt => self.set_prompt(args),
         }
     }
 
@@ -628,15 +627,15 @@ impl Controller {
         Ok(())
     }
 
-    fn set_prompt(&mut self, s: &str) -> SpotifyResult {
-        let s = s.trim();
-        if s.is_empty() {
-            println!("missing argument: text\ntype `help prompt` for the usage");
-        } else {
-            self.prompt.clear();
-            self.prompt.push_str(s);
-            self.prompt.push(' ');
-        }
+    fn set_prompt(&mut self, arg: Option<&str>) -> SpotifyResult {
+        match arg {
+            Some(a) => {
+                self.prompt.clear();
+                self.prompt.push_str(a);
+                self.prompt.push(' ');
+            }
+            None => self.show_usage(Cmd::Prompt),
+        };
         Ok(())
     }
 

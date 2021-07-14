@@ -278,5 +278,13 @@ pub fn default_handlers() -> Vec<Handler> {
 	playing (or empty): Show currently playing track.
 	playlist: Show one of your playlists by name.",
 	),
+	new(
+	Prompt,
+	"prompt",
+	"Change the libman prompt.",
+	"prompt <prompt>",
+	&[],
+	"Change the libman prompt. A space character will be automatically appended.",
+	),
 	]
 }

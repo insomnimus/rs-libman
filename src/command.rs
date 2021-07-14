@@ -32,4 +32,5 @@ pub enum Cmd {
     PlayUserPlaylist,
     SetDevice,
     Show,
+    Prompt,
 }
