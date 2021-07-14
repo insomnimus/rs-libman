@@ -911,11 +911,32 @@ impl Controller {
             })
     }
 
-    fn queue_track(&self, _t: &FullTrack) -> SpotifyResult {
-        todo!()
+    fn queue_track(&self, t: &FullTrack) -> SpotifyResult {
+        let id = match t.id.as_ref() {
+            Some(i) => i.clone(),
+            None => t.uri.clone(),
+        };
+        self.client.add_item_to_queue(id, None).map(|_| {
+            println!("added {} to the queue", &t.name);
+        })
     }
 
-    fn like_track(&self, _t: &FullTrack) -> SpotifyResult {
-        todo!()
+    fn like_track(&self, t: &FullTrack) -> SpotifyResult {
+        let id = match t.id.as_ref() {
+            Some(i) => i.clone(),
+            None => t.uri.clone(),
+        };
+        if let Ok(Some(true)) = self
+            .client
+            .current_user_saved_tracks_contains(&[id.clone()])
+            .map(|v| v.get(0).copied())
+        {
+            println!("{} is already in your favourites folder", &t.name);
+            Ok(())
+        } else {
+            self.client.current_user_saved_tracks_add(&[id]).map(|_| {
+                println!("added {} to your favourites folder", &t.name);
+            })
+        }
     }
 }
