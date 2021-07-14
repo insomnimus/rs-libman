@@ -2,6 +2,60 @@ use super::Controller;
 use crate::{command::Cmd, playlist::Playlist, read_number, search, SpotifyResult};
 use rspotify::model::{album::SimplifiedAlbum, artist::FullArtist, track::FullTrack};
 
+enum SearchResult {
+    Track(FullTrack),
+    Album(SimplifiedAlbum),
+    Artist(FullArtist),
+    Playlist(Playlist),
+}
+
+impl SearchResult {
+    fn println(&self, no: usize) {
+        match self {
+            Self::Track(t) => {
+                println!(
+                    "#{no:2}: {kind:8} | {name} by {artists}",
+                    no = no,
+                    kind = "track",
+                    name = &t.name,
+                    artists = crate::join_artists(&t.artists)
+                );
+            }
+            Self::Album(a) => {
+                println!(
+                    "#{no:2}: {kind:8} | {name} by {artists}",
+                    no = no,
+                    kind = "album",
+                    name = &a.name,
+                    artists = crate::join_artists(&a.artists)
+                );
+            }
+            Self::Artist(a) => {
+                println!(
+                    "#{no:2}: {kind:8} | {name}",
+                    no = no,
+                    kind = "artist",
+                    name = &a.name
+                );
+            }
+            Self::Playlist(p) => {
+                println!(
+                    "#{no:2}: {kind:8} | {name} from {owner}",
+                    no = no,
+                    kind = "playlist",
+                    name = p.name(),
+                    owner = p
+                        .owner()
+                        .display_name
+                        .as_ref()
+                        .map(|s| &s[..])
+                        .unwrap_or("unknown")
+                );
+            }
+        };
+    }
+}
+
 impl Controller {
     pub fn search_track(&mut self, arg: Option<&str>) -> SpotifyResult {
         let query = match arg {
@@ -175,59 +229,5 @@ impl Controller {
             println!("cancelled");
             Ok(())
         }
-    }
-}
-
-enum SearchResult {
-    Track(FullTrack),
-    Album(SimplifiedAlbum),
-    Artist(FullArtist),
-    Playlist(Playlist),
-}
-
-impl SearchResult {
-    fn println(&self, no: usize) {
-        match self {
-            Self::Track(t) => {
-                println!(
-                    "#{no:2}: {kind:8} | {name} by {artists}",
-                    no = no,
-                    kind = "track",
-                    name = &t.name,
-                    artists = crate::join_artists(&t.artists)
-                );
-            }
-            Self::Album(a) => {
-                println!(
-                    "#{no:2}: {kind:8} | {name} by {artists}",
-                    no = no,
-                    kind = "album",
-                    name = &a.name,
-                    artists = crate::join_artists(&a.artists)
-                );
-            }
-            Self::Artist(a) => {
-                println!(
-                    "#{no:2}: {kind:8} | {name}",
-                    no = no,
-                    kind = "artist",
-                    name = &a.name
-                );
-            }
-            Self::Playlist(p) => {
-                println!(
-                    "#{no:2}: {kind:8} | {name} from {owner}",
-                    no = no,
-                    kind = "playlist",
-                    name = p.name(),
-                    owner = p
-                        .owner()
-                        .display_name
-                        .as_ref()
-                        .map(|s| &s[..])
-                        .unwrap_or("unknown")
-                );
-            }
-        };
     }
 }

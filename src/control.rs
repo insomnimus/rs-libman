@@ -799,16 +799,7 @@ impl Controller {
 
     fn play_artist(&mut self, art: &FullArtist) -> SpotifyResult {
         self.client
-            .start_playback(
-                None,
-                Some(art.uri.clone()),
-                None,
-                Some(Offset {
-                    position: Some(0),
-                    uri: None,
-                }),
-                None,
-            )
+            .start_playback(None, Some(art.uri.clone()), None, None, None)
             .map(|_| {
                 self.playing = true;
                 println!("playing {}", &art.name);
