@@ -4,7 +4,7 @@ use rspotify::blocking::{
     oauth2::{SpotifyClientCredentials, SpotifyOAuth},
     util::get_token,
 };
-use std::{env, process};
+use std::{env, path::PathBuf, process};
 
 const SCOPES: &str = "user-read-recently-played user-read-playback-state user-top-read playlist-modify-public user-modify-playback-state playlist-modify-private user-follow-modify user-read-currently-playing user-follow-read user-library-modify user-read-playback-position playlist-read-private user-library-read playlist-read-collaborative";
 
@@ -21,12 +21,16 @@ fn main() {
         println!("you must set the LIBMAN_REDIRECT_URI env variable to a configured redirect uri");
         process::exit(2);
     });
+    let cache_path: PathBuf = env::var("LIBMAN_CACHE_PATH")
+        .unwrap_or_else(|_| String::from("./"))
+        .into();
 
     let mut oauth = SpotifyOAuth::default()
         .scope(SCOPES)
         .client_id(&client_id)
         .client_secret(&client_secret)
         .redirect_uri(&redirect_uri)
+        .cache_path(cache_path)
         .build();
 
     let client = match get_token(&mut oauth) {
