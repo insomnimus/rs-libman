@@ -1,7 +1,5 @@
 # libman
 
-Rest of the readme coming soon.
+Development is stopped until the `rspotify` crate releases 0.11.0.
 
-# Installation
-
-`cargo install --git https://github.com/insomnimus/libman --branch main`
+A work in progress re-write can be found [here](https://github.com/insomnimus/libman).

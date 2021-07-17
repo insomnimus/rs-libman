@@ -686,7 +686,7 @@ checksum = "320cfe77175da3a483efed4bc0adc1968ca050b098ce4f2f1c13a56626128790"
 
 [[package]]
 name = "libman"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "chrono",
  "failure",
@@ -1231,8 +1231,6 @@ dependencies = [
 [[package]]
 name = "rspotify"
 version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eefd7bb58b714606b30a490f751d7926942e2874eef5e82934d60d7a4a68dca4"
 dependencies = [
  "base64 0.10.1",
  "chrono",
